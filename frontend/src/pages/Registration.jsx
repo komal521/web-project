@@ -10,6 +10,7 @@ import appleIcon from "../assets/mobile-phone.png";
 import facebookIcon from "../assets/facebook.png";
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 const Registration = () => {
    const [formData, setFormData] = useState({
   fullName: "",
@@ -35,14 +36,14 @@ const handleSubmit = async (e) => {
       "http://localhost:5000/api/auth/register",
       formData
     );
-
     alert(response.data.message);
-
+    navigate("/home"); 
   } catch (error) {
-    console.log(error);
+    console.error(error);
     alert("Registration Failed");
   }
 };
+const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#f6f6f6] flex justify-center items-center px-4 py-8">
       <div className="w-full max-w-[750px] bg-white rounded-3xl shadow-lg p-6 md:p-10">
@@ -73,7 +74,7 @@ const handleSubmit = async (e) => {
             <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
               <img src={handleIcon} alt="" className="w-4 h-4" />
               <input type="text" name="username" placeholder="UserName" onChange={handleChange}
-  className="w-full ml-3 outline-none text-sm"/>
+                 className="w-full ml-3 outline-none text-sm"/>
             </div>
           </div>
           <div>
@@ -137,26 +138,31 @@ const handleSubmit = async (e) => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="text-sm font-medium">
-              Password
-            </label>
-            <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
-              <img src={lockIcon} alt="" className="w-4 h-4" />
-             <input type="password" name="confirmPassword" placeholder="Confirm Password"
-          onChange={handleChange}
-  className="w-full ml-3 outline-none text-sm"/>
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium">
-              Confirm Password
-            </label>
-            <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
-              <img src={lockIcon} alt="" className="w-4 h-4" />
-             <input type="password" name="password"   placeholder="Confirm Password" onChange={handleChange}
-              className="w-full ml-3 outline-none text-sm"/>
-            </div>
-          </div>
+  <label className="text-sm font-medium">Password</label>
+  <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
+    <img src={lockIcon} alt="" className="w-4 h-4" />
+    <input
+      type="password"
+      name="password"
+      placeholder="Password"
+      onChange={handleChange}
+      className="w-full ml-3 outline-none text-sm"
+    />
+  </div>
+</div>
+         <div>
+  <label className="text-sm font-medium">Confirm Password</label>
+  <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
+    <img src={lockIcon} alt="" className="w-4 h-4" />
+    <input
+      type="password"
+      name="confirmPassword"
+      placeholder="Confirm Password"
+      onChange={handleChange}
+      className="w-full ml-3 outline-none text-sm"
+    />
+  </div>
+</div>
         </div>
         <div className="bg-gray-100 rounded-2xl p-4 mt-8">
           <label className="flex gap-3 text-sm">
@@ -166,11 +172,13 @@ const handleSubmit = async (e) => {
             </span>
           </label>
         </div>
-        <button onClick={handleSubmit}
+       <button
+  type="button"
+  onClick={handleSubmit}
   className="w-full mt-8 h-14 rounded-full bg-gradient-to-r from-[#d7c2ff] to-[#a56eff] text-white font-semibold flex items-center justify-center gap-3 hover:opacity-95 transition">
-          Create My Premium Account
-          <img  src={arrowIcon}  alt=""  className="w-5 h-5"/>
-        </button>
+  Create My Premium Account
+  <img src={arrowIcon} alt="" className="w-5 h-5" />
+</button>
         <div className="flex items-center my-7">
           <div className="flex-1 border-t"></div>
           <span className="px-4 text-xs text-gray-500 font-medium">
