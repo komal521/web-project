@@ -1,0 +1,206 @@
+import { useNavigate } from "react-router-dom";
+import b1 from "../assets/b1.webp";
+import b3 from "../assets/b3.webp";
+import b5 from "../assets/b5.webp";
+import c1 from "../assets/c1.avif";
+import c3 from "../assets/c3.avif";
+import k3 from "../assets/k3.webp";
+import b2 from "../assets/b2.webp";
+import b4 from "../assets/b4.webp";
+import star from "../assets/star (1).png";
+import arrow1 from "../assets/right-arrow (1).png";
+import arrow from "../assets/right-arrow.png";
+import verified from "../assets/verified.png";
+import checked from "../assets/checked.png";
+import appointment from "../assets/appointment.png";
+import Navbar from "../component/Navbar";
+import Footer from "../component/Footer";
+const Services = () => {
+  const navigate = useNavigate();
+const services = [
+  {
+    image: b1,
+    title: "bags",
+    price: "₹1,200",
+    desc: "Stylish and durable bag featuring spacious compartments, premium materials, comfortable straps, and modern design for everyday use."
+  },
+  {
+    image: b3,
+    title: "Laptop ",
+    price: "₹1,500",
+    desc: "Powerful and reliable laptop with fast performance, vibrant display, long battery life, and sleek design for work."
+  },
+  {
+    image: b5,
+    title: "smart Camra ",
+    price: "₹2,000",
+    desc: "Advanced AI-powered 4K camera system delivering crystal-clear video, smart tracking, enhanced security, and professional-quality performance."
+  },
+  {
+    image: c1,
+    title: "Luxury Signature Perfume",
+    price: "₹1,800",
+    desc: "Elegant long-lasting fragrance crafted with premium ingredients, offering a refreshing scent, sophisticated charm, and all-day confidence."
+  },
+  {
+    image: c3,
+    title: "UltraComfort Running Shoes",
+    price: "₹3,000",
+    desc: "Lightweight and breathable running shoes featuring cushioned support, durable construction, and modern style for all-day comfort."
+  },
+  {
+    image: k3,
+    title: "Luxury Sports Watch",
+    price: "₹3,500",
+    desc: "Stylish and durable sports watch featuring precision timekeeping, premium craftsmanship, water resistance, and exceptional everyday performance."
+  },
+];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="bg-[#faf8f6] min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 py-14">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Our <span className="text-purple-600 italic">Spiritual Services</span>
+            </h1>
+            <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
+              Experience divine blessings through our trusted puja and
+              spiritual services performed by certified priests.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-5 max-w-lg mx-auto mt-10 text-center">
+            <div>
+              <h3 className="font-bold text-xl">15K+</h3>
+              <p className="text-gray-500 text-sm">Bookings</p>
+            </div>
+            <div>
+              <h3 className="font-bold text-xl">4.9/5</h3>
+              <p className="text-gray-500 text-sm">Ratings</p>
+            </div>
+            <div>
+              <h3 className="font-bold text-xl">50+</h3>
+              <p className="text-gray-500 text-sm">Services</p>
+            </div>
+          </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+          {services.map((item, index) => (
+  <div  key={index}  onClick={() => navigate("/product")}
+    className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
+  >
+    <img src={item.image} alt={item.title}
+      className="w-full h-52 sm:h-56 md:h-60 object-cover" />
+    <div className="p-5 flex flex-col flex-1">
+      <div className="flex items-center gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <img key={s} src={star} alt="" className="w-4 h-4"  /> ))}
+      </div>
+      <h3 className="font-bold text-lg text-gray-900">
+        {item.title}
+      </h3>
+      <p className="text-gray-500 text-sm leading-6 mt-2 flex-1">
+        {item.desc}
+      </p>
+      <p className="text-purple-600 font-bold text-xl mt-4">
+        {item.price}
+      </p>
+      <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
+        Book Now
+        <img src={arrow1} alt="" className="w-4 h-4"   />
+      </button>
+    </div>
+  </div>
+))}
+          </div>
+          <div className="flex justify-center mt-10">
+            <button className="border border-purple-300 text-purple-600 px-6 py-3 rounded-full flex items-center gap-2">
+              Explore More Services
+              <img src={arrow} alt=""  className="w-4 h-4"/>
+            </button>
+          </div>
+        </div>
+        <div className="bg-white py-16">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <img src={verified} alt="" className="w-14 mx-auto" />
+                <h3 className="font-bold mt-4">
+                  Certified Priests
+                </h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  Experienced and verified priests.
+                </p>
+              </div>
+              <div className="text-center">
+                <img   src={checked}   alt=""   className="w-14 mx-auto" />
+                <h3 className="font-bold mt-4">
+                  Divine Timings
+                </h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  Auspicious muhurat guidance.
+                </p>
+              </div>
+              <div className="text-center">
+                <img src={appointment}  alt=""  className="w-14 mx-auto"/>
+                <h3 className="font-bold mt-4">
+                  Flexible Booking
+                </h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  Easy scheduling for your puja.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="py-16">
+          <div className="max-w-5xl mx-auto px-4">
+            <h2 className="text-center text-3xl font-bold mb-10">
+              What Devotees Say
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl p-6 shadow">
+                <div className="flex gap-1 mb-3">
+                  {[1,2,3,4,5].map((s)=>(
+                    <img key={s} src={star} alt="" className="w-4 h-4"  />
+                  ))}
+                </div>
+                <p className="text-gray-600">
+                  The priest was highly knowledgeable and the entire
+                  ceremony was conducted perfectly.
+                </p>
+                <div className="flex items-center gap-3 mt-5">
+                  <img src={b2} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  <h4 className="font-semibold">
+                    Ramesh Kumar
+                  </h4>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl p-6 shadow">
+                <div className="flex gap-1 mb-3">
+                  {[1,2,3,4,5].map((s)=>(
+                    <img   key={s}   src={star} alt="" className="w-4 h-4" />
+                  ))}
+                </div>
+                <p className="text-gray-600">
+                  Excellent service. Booking process was smooth and
+                  the puja experience was wonderful.
+                </p>
+                <div className="flex items-center gap-3 mt-5">
+                  <img src={b4} alt="" className="w-12 h-12 rounded-full object-cover"/>
+                  <h4 className="font-semibold">
+                    Anita Sharma
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </>
+  );
+};
+
+export default Services;

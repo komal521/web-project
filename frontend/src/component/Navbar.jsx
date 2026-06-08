@@ -14,7 +14,7 @@ const Navbar = () => {
             </h1>
             <nav className="hidden md:flex items-center gap-7">
              <Link to="/home" className="text-purple-600 font-medium">Home </Link>
-              <Link to="/product" className="text-gray-600 hover:text-purple-600">
+              <Link to="/services" className="text-gray-600 hover:text-purple-600">
                Products
                  </Link>
               <a href="/" className="text-gray-600 hover:text-purple-600">
