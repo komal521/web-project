@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import b1 from "../assets/b1.webp";
 import b3 from "../assets/b3.webp";
 import b5 from "../assets/b5.webp";
@@ -17,45 +18,19 @@ import Navbar from "../component/Navbar";
 import Footer from "../component/Footer";
 const Services = () => {
   const navigate = useNavigate();
-const services = [
-  {
-    image: b1,
-    title: "bags",
-    price: "₹1,200",
-    desc: "Stylish and durable bag featuring spacious compartments, premium materials, comfortable straps, and modern design for everyday use."
-  },
-  {
-    image: b3,
-    title: "Laptop ",
-    price: "₹1,500",
-    desc: "Powerful and reliable laptop with fast performance, vibrant display, long battery life, and sleek design for work."
-  },
-  {
-    image: b5,
-    title: "smart Camra ",
-    price: "₹2,000",
-    desc: "Advanced AI-powered 4K camera system delivering crystal-clear video, smart tracking, enhanced security, and professional-quality performance."
-  },
-  {
-    image: c1,
-    title: "Luxury Signature Perfume",
-    price: "₹1,800",
-    desc: "Elegant long-lasting fragrance crafted with premium ingredients, offering a refreshing scent, sophisticated charm, and all-day confidence."
-  },
-  {
-    image: c3,
-    title: "UltraComfort Running Shoes",
-    price: "₹3,000",
-    desc: "Lightweight and breathable running shoes featuring cushioned support, durable construction, and modern style for all-day comfort."
-  },
-  {
-    image: k3,
-    title: "Luxury Sports Watch",
-    price: "₹3,500",
-    desc: "Stylish and durable sports watch featuring precision timekeeping, premium craftsmanship, water resistance, and exceptional everyday performance."
-  },
-];
+const [services, setServices] = useState([]);
+useEffect(() => {
+  fetch("http://localhost:5000/api/products")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log(data);
 
+      if (data.success) {
+        setServices(data.products);
+      }
+    })
+    .catch((err) => console.log(err));
+}, []);
   return (
     <>
       <Navbar />
@@ -90,21 +65,24 @@ const services = [
   <div  key={index}  onClick={() => navigate("/product")}
     className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
   >
-    <img src={item.image} alt={item.title}
-      className="w-full h-52 sm:h-56 md:h-60 object-cover" />
+<img
+  src={`http://localhost:5000/uploads/${item.image}`}
+  alt={item.product_name}
+  className="w-full h-52 sm:h-56 md:h-60 object-cover"
+/>
     <div className="p-5 flex flex-col flex-1">
       <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((s) => (
           <img key={s} src={star} alt="" className="w-4 h-4"  /> ))}
       </div>
       <h3 className="font-bold text-lg text-gray-900">
-        {item.title}
+        {item.product_name}
       </h3>
       <p className="text-gray-500 text-sm leading-6 mt-2 flex-1">
-        {item.desc}
+       {item.description}
       </p>
       <p className="text-purple-600 font-bold text-xl mt-4">
-        {item.price}
+     ₹{item.base_price}
       </p>
       <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
         Book Now
