@@ -160,6 +160,27 @@ app.get("/api/categories", (req, res) => {
     res.status(200).json({ success: true, categories: results });
   });
 });
+app.delete("/api/categories/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = "DELETE FROM categories WHERE id = ?";
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.log("Category delete error:", err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Delete failed",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
+  });
+});
 app.post("/api/products", upload.single("image"), (req, res) => {
   const {
     productName,

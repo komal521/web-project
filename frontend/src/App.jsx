@@ -5,6 +5,9 @@ import About from "./pages/About";
 import ProductPage from "./pages/ProductPage";
 import Services from "./pages/Services";
 import Categories from "./pages/Categories";
+import Contact from "./pages/Contact";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
         <Route path="/services" element={<Services />} />
          <Route path="/product" element={<ProductPage />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/contact" element={<Contact />}/>
+        <Route path="/profile" element={<Profile />} />
+        <Route path ="Login" element ={<Login/>}/>
       </Routes>
     </BrowserRouter>
   );
