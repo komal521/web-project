@@ -14,6 +14,7 @@ import arrow from "../assets/right-arrow.png";
 import verified from "../assets/verified.png";
 import checked from "../assets/checked.png";
 import appointment from "../assets/appointment.png";
+import cart from "../assets/shopping-cart.png";
 import Navbar from "../component/Navbar";
 import Footer from "../component/Footer";
 const Services = () => {
@@ -34,7 +35,6 @@ useEffect(() => {
   return (
     <>
       <Navbar />
-
       <div className="bg-[#faf8f6] min-h-screen">
         <div className="max-w-7xl mx-auto px-4 py-14">
           <div className="text-center">
@@ -68,8 +68,7 @@ useEffect(() => {
 <img
   src={`http://localhost:5000/uploads/${item.image}`}
   alt={item.product_name}
-  className="w-full h-52 sm:h-56 md:h-60 object-cover"
-/>
+  className="w-full h-52 sm:h-56 md:h-60 object-cover"/>
     <div className="p-5 flex flex-col flex-1">
       <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((s) => (
@@ -84,9 +83,17 @@ useEffect(() => {
       <p className="text-purple-600 font-bold text-xl mt-4">
      ₹{item.base_price}
       </p>
-      <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
-        Book Now
-        <img src={arrow1} alt="" className="w-4 h-4"   />
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+          cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.product_name, price: `₹${item.base_price}`, tag: "Service" });
+          localStorage.setItem("cart", JSON.stringify(cartItems));
+          navigate("/cart");
+        }}
+        className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
+        <span>Add to Cart</span>
+        <img src={cart} alt="Cart" className="w-5 h-5 brightness-0 invert" />
       </button>
     </div>
   </div>

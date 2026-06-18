@@ -3,7 +3,9 @@ import instagramIcon from "../assets/instagram.png";
 import twitterIcon from "../assets/twitter.png";
 import youtubeIcon from "../assets/youtube.png";
 import arrowIcon from "../assets/right-arrow.png";
+import { useNavigate } from "react-router-dom";
 const Footer = () => {
+  const navigate = useNavigate();
   return (
     <footer className="bg-[#f7f7f7] border-t">
       <div className="max-w-7xl mx-auto px-6 py-14">
@@ -29,19 +31,19 @@ const Footer = () => {
               Quick Links
             </h3>
             <ul className="space-y-3 text-gray-600">
-              <li className="hover:text-purple-700 cursor-pointer">
-                Home
-              </li>
-              <li className="hover:text-purple-700 cursor-pointer">
-                Shop
-              </li>
-              <li className="hover:text-purple-700 cursor-pointer">
+              <li onClick={() => navigate("/product")}
+                className="hover:text-purple-700 cursor-pointer" >
+                Products</li>
+              <li onClick={() => navigate("/categories")}
+                className="hover:text-purple-700 cursor-pointer">
                 Categories
               </li>
-              <li className="hover:text-purple-700 cursor-pointer">
-                About Us
+              <li onClick={() => navigate("/about")}
+                className="hover:text-purple-700 cursor-pointer" >
+                About
               </li>
-              <li className="hover:text-purple-700 cursor-pointer">
+              <li onClick={() => navigate("/contact")}
+                className="hover:text-purple-700 cursor-pointer"  >
                 Contact
               </li>
             </ul>
@@ -51,11 +53,10 @@ const Footer = () => {
               Categories
             </h3>
             <ul className="space-y-3 text-gray-600">
-              <li>Electronics</li>
-              <li>Fashion</li>
-              <li>Accessories</li>
-              <li>Home & Living</li>
-              <li>Beauty</li>
+              <li onClick={() => navigate("/categories")}
+                className="hover:text-purple-700 cursor-pointer">
+                View All Categories
+              </li>
             </ul>
           </div>
           <div>

@@ -36,6 +36,9 @@ const handleSubmit = async (e) => {
       "http://localhost:5000/api/auth/register",
       formData
     );
+    if (response.data.success && response.data.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
     alert(response.data.message);
     navigate("/home"); 
   } catch (error) {
@@ -141,26 +144,17 @@ const navigate = useNavigate();
   <label className="text-sm font-medium">Password</label>
   <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
     <img src={lockIcon} alt="" className="w-4 h-4" />
-    <input
-      type="password"
-      name="password"
-      placeholder="Password"
-      onChange={handleChange}
-      className="w-full ml-3 outline-none text-sm"
-    />
+    <input  type="password"  name="password"  placeholder="Password"  onChange={handleChange}
+      className="w-full ml-3 outline-none text-sm" />
   </div>
 </div>
          <div>
   <label className="text-sm font-medium">Confirm Password</label>
   <div className="flex items-center border border-gray-300 rounded-full px-4 h-12 mt-2">
     <img src={lockIcon} alt="" className="w-4 h-4" />
-    <input
-      type="password"
-      name="confirmPassword"
-      placeholder="Confirm Password"
+    <input type="password" name="confirmPassword" placeholder="Confirm Password"
       onChange={handleChange}
-      className="w-full ml-3 outline-none text-sm"
-    />
+      className="w-full ml-3 outline-none text-sm" />
   </div>
 </div>
         </div>
@@ -172,13 +166,11 @@ const navigate = useNavigate();
             </span>
           </label>
         </div>
-       <button
-  type="button"
-  onClick={handleSubmit}
+       <button  type="button"  onClick={handleSubmit}
   className="w-full mt-8 h-14 rounded-full bg-gradient-to-r from-[#d7c2ff] to-[#a56eff] text-white font-semibold flex items-center justify-center gap-3 hover:opacity-95 transition">
   Create My Premium Account
   <img src={arrowIcon} alt="" className="w-5 h-5" />
-</button>
+       </button>
         <div className="flex items-center my-7">
           <div className="flex-1 border-t"></div>
           <span className="px-4 text-xs text-gray-500 font-medium">
@@ -210,5 +202,4 @@ const navigate = useNavigate();
     </div>
   );
 };
-
 export default Registration;

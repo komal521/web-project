@@ -141,7 +141,6 @@ console.log("Categories State:", categories);
                    ))}
                    </div>
                                 </div>
-                        {/*Price Range */}
                         <div className="border-b pb-4 mb-4">
                           <div className="flex items-center justify-between mb-4">
                             <h4 className=" text-sm font-medium">Price Range</h4>
@@ -231,6 +230,16 @@ console.log("Categories State:", categories);
     <button className="absolute top-3 right-3 bg-white rounded-full p-2 shadow">
       <img src={heart} alt="" className="w-4 h-4" />
     </button>
+    <button 
+      onClick={() => {
+        const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+        cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.category_name, tag: "Category", price: "₹1,450" });
+        localStorage.setItem("cart", JSON.stringify(cartItems));
+        window.location.href = "/cart";
+      }}
+      className="absolute top-3 right-12 bg-white rounded-full p-2 shadow hover:bg-gray-100 transition">
+      <img src={cart} alt="" className="w-4 h-4" />
+    </button>
   </div>
 
   <div className="p-4">
@@ -242,8 +251,15 @@ console.log("Categories State:", categories);
       {item.category_name}
     </h3>
 
-    <button className="mt-4 w-full bg-purple-700 text-white py-2 rounded-lg">
-      View Category
+    <button 
+      onClick={() => {
+        const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+        cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.category_name, tag: "Category", price: "₹1,450" });
+        localStorage.setItem("cart", JSON.stringify(cartItems));
+        window.location.href = "/cart";
+      }}
+      className="mt-4 w-full bg-purple-700 hover:bg-purple-800 transition text-white py-2 rounded-lg">
+      Add to Cart
     </button>
   </div>
 </div>

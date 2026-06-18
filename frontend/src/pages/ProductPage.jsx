@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../component/Navbar";
 import Footer from "../component/Footer";
 import z2 from "../assets/z2.webp";
@@ -107,36 +108,46 @@ const features = [
   { icon: returns,  title: "Easy Returns",     desc: "7 Days Return Policy" },
   { icon: premium,  title: "Premium Quality",  desc: "Certified Products" },
 ];
-const ProductCard = ({ img, tag, title, price, oldPrice, rating, showButton = false }) => (
-  <div className="bg-white rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full">
-    <div className="relative overflow-hidden">
-      <img src={img} alt={title}
-        className="w-full h-[240px] sm:h-[260px] object-cover group-hover:scale-105 transition duration-500"/>
-      <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow">
-        {tag}
-      </span>
-    </div>
-    <div className="p-4">
-      <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-      <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-purple-600 font-bold text-base">{price}</span>
-          {oldPrice && (
-            <span className="text-gray-400 line-through text-xs">{oldPrice}</span> )}
-        </div>
-        <div className="flex items-center gap-1">
-          <img src={star1} alt="star" className="w-4 h-4 object-contain" />
-          <span className="text-gray-500 text-sm font-medium">{rating}</span>
-        </div>
+const ProductCard = ({ img, tag, title, price, oldPrice, rating, showButton = false }) => {
+  const navigate = useNavigate();
+  const addToCart = () => {
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart.push({ img, tag, title, price });
+    localStorage.setItem("cart", JSON.stringify(cart));
+    navigate("/cart");
+  };
+  return (
+    <div className="bg-white rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full">
+      <div className="relative overflow-hidden">
+        <img src={img} alt={title}
+          className="w-full h-[240px] sm:h-[260px] object-cover group-hover:scale-105 transition duration-500"/>
+        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow">
+          {tag}
+        </span>
       </div>
-      {showButton && (
-        <button className="mt-3 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-full text-sm font-semibold hover:scale-105 transition-all duration-300">
-          Add to Cart
-        </button>
-      )}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
+        <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-purple-600 font-bold text-base">{price}</span>
+            {oldPrice && (
+              <span className="text-gray-400 line-through text-xs">{oldPrice}</span> )}
+          </div>
+          <div className="flex items-center gap-1">
+            <img src={star1} alt="star" className="w-4 h-4 object-contain" />
+            <span className="text-gray-500 text-sm font-medium">{rating}</span>
+          </div>
+        </div>
+        {showButton && (
+          <button onClick={(e) => { e.stopPropagation(); addToCart(); }} className="mt-3 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-full text-sm font-semibold hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2">
+            <img src={cart} alt="Cart" className="w-4 h-4 brightness-0 invert" />
+            Add to Cart
+          </button>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 const SectionHeader = ({ title, highlight, subtitle, btnLabel = "View All Collection" }) => (
   <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
     <div>
@@ -155,12 +166,29 @@ const ProductPage = () => {
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [products, setProducts] = useState([]);
+  const [dynamicTimeless, setDynamicTimeless] = useState([]);
   useEffect(() => {
   fetch("http://localhost:5000/api/products")
     .then((res) => res.json())
     .then((data) => {
       if (data.success) {
         setProducts(data.products);
+        const featured = data.products.filter(p => p.is_featured).slice(0, 4);
+        const mappedFeatured = featured.map(p => ({
+          img: p.image ? `http://localhost:5000/uploads/${p.image}` : c1,
+          tag: p.category,
+          title: p.product_name,
+          price: `₹${p.base_price}`,
+          oldPrice: p.discount_price > 0 ? `₹${p.discount_price}` : "",
+          rating: "4.9"
+        }));
+        
+        if (mappedFeatured.length < 4) {
+          const filler = timelessProducts.slice(0, 4 - mappedFeatured.length);
+          setDynamicTimeless([...mappedFeatured, ...filler]);
+        } else {
+          setDynamicTimeless(mappedFeatured);
+        }
       }
     })
     .catch((err) => console.log(err));
@@ -211,13 +239,27 @@ const ProductPage = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button className="flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:scale-105 transition-all duration-300">
+                <button 
+                  onClick={() => {
+                    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                    cart.push({ img: z2, tag: "New Collection 2025", title: "Mastery in Motion.", price: "₹1,450" });
+                    localStorage.setItem("cart", JSON.stringify(cart));
+                    window.location.href = "/cart";
+                  }}
+                  className="flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:scale-105 transition-all duration-300">
                   Add To Bag
                   <div className="bg-white/20 p-2 rounded-full">
                     <img src={cart} alt="" className="w-4 h-4 brightness-0 invert" />
                   </div>
                 </button>
-                <button className="bg-yellow-400 hover:bg-yellow-500 px-8 py-4 rounded-full font-semibold transition-all">
+                <button 
+                  onClick={() => {
+                    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                    cart.push({ img: z2, tag: "New Collection 2025", title: "Mastery in Motion.", price: "₹1,450" });
+                    localStorage.setItem("cart", JSON.stringify(cart));
+                    window.location.href = "/cart";
+                  }}
+                  className="bg-yellow-400 hover:bg-yellow-500 px-8 py-4 rounded-full font-semibold transition-all">
                   Buy It Now
                 </button>
               </div>
@@ -254,15 +296,16 @@ const ProductPage = () => {
             subtitle="Discover the season's most wanted luxury items." />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
            {products.map((item) => (
-  <ProductCard
-    key={item.id}
-    img={`http://localhost:5000/uploads/${item.image}`}
-    tag={item.category}
-    title={item.product_name}
-    price={`₹${item.base_price}`}
-    oldPrice={`₹${item.discount_price}`}
-    rating="4.8"
-  />
+   <ProductCard
+     key={item.id}
+     img={`http://localhost:5000/uploads/${item.image}`}
+     tag={item.category}
+     title={item.product_name}
+     price={`₹${item.base_price}`}
+     oldPrice={`₹${item.discount_price}`}
+     rating="4.8"
+     showButton={true}
+   />
 ))}
           </div>
                     <div className="flex justify-center mt-8 sm:hidden">
@@ -287,7 +330,7 @@ const ProductPage = () => {
               Hand-curated selections that define enduring style.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {timelessProducts.map((item, i) => (
+              {(dynamicTimeless.length > 0 ? dynamicTimeless : timelessProducts).map((item, i) => (
                 <div
                   key={i}
                   className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full" >
@@ -312,9 +355,21 @@ const ProductPage = () => {
                         <span className="text-gray-400 line-through text-xs">{item.oldPrice}</span>
                       )}
                     </div>
-                    <button className="mt-3 w-full border border-purple-300 text-purple-600 py-2 rounded-full text-xs font-semibold hover:bg-purple-50 transition">
-                      Quick View
-                    </button>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button className="flex-1 border border-purple-300 text-purple-600 py-2 rounded-full text-xs font-semibold hover:bg-purple-50 transition">
+                        Quick View
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+                          cartItems.push({ img: item.img, title: item.title, tag: item.tag, price: item.price });
+                          localStorage.setItem("cart", JSON.stringify(cartItems));
+                          window.location.href = "/cart";
+                        }}
+                        className="w-10 h-10 border border-purple-300 bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 flex items-center justify-center rounded-full transition group-hover:shadow-md">
+                        <img src={cart} alt="cart" className="w-4 h-4 hover:invert group-hover:brightness-0 transition" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -323,7 +378,6 @@ const ProductPage = () => {
         </div>
         <div className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            {/* Header — centered like screenshot */}
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 Voices of{" "}
@@ -382,7 +436,6 @@ const ProductPage = () => {
             </div>
           </div>
         </div>
-
       </div>
       <Footer />
     </>

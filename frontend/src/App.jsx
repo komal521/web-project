@@ -9,11 +9,16 @@ import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Registration />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Registration />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
@@ -21,7 +26,8 @@ function App() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/contact" element={<Contact />}/>
         <Route path="/profile" element={<Profile />} />
-        <Route path ="Login" element ={<Login/>}/>
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
       </Routes>
     </BrowserRouter>
   );

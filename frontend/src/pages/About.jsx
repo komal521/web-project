@@ -27,7 +27,6 @@ const About = () => {
                   {" "}Experiences
                 </span>
               </h1>
-
               <p className="text-base md:text-lg text-gray-100 mb-8">
                 We create premium digital experiences that blend
                 creativity, innovation, and elegance to deliver

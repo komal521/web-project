@@ -1,5 +1,4 @@
 const db = require("../config/db");
-
 const register = (req, res) => {
   const {
     fullName,
@@ -10,7 +9,6 @@ const register = (req, res) => {
     dob,
     password,
   } = req.body;
-
   const sql = `
     INSERT INTO users
     (
@@ -24,7 +22,6 @@ const register = (req, res) => {
     )
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
-
   db.query(
     sql,
     [
@@ -44,12 +41,10 @@ const register = (req, res) => {
           message: "Registration Failed",
         });
       }
-
       res.status(201).json({
         message: "Registration Successful",
       });
     }
   );
 };
-
 module.exports = { register };

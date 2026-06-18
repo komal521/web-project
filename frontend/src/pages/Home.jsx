@@ -32,7 +32,6 @@ const Home = () => {
   const [activeReview, setActiveReview] = useState(3);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -115,7 +114,6 @@ const newArrivals = [
     price: "₹99,000",
   },
 ];
-
 const testimonials = [
   {
     id: 1,
@@ -146,8 +144,8 @@ const fetchedFeaturedProducts = products.filter((p) => p.is_featured).slice(0, 4
   image: p.image ? `http://localhost:5000/uploads/${p.image}` : m1,
   category: p.category,
   title: p.product_name,
-  price: `₹${Number(p.base_price || 0).toFixed(2)}`,
-  oldPrice: p.discount_price && p.discount_price > 0 ? `₹${Number(p.discount_price || 0).toFixed(2)}` : "",
+  price: `₹${Number(p.base_price || 999).toFixed(2)}`,
+  oldPrice: p.discount_price && p.discount_price > 0 ? `₹${Number(p.discount_price || 1299).toFixed(2)}` : "",
   discount: "",
 }));
 let displayFeatured = [...fetchedFeaturedProducts];
@@ -155,12 +153,11 @@ if (displayFeatured.length < 4) {
   const filler = featuredProducts.slice(0, 4 - displayFeatured.length).map(p => ({...p, id: `static-feat-${p.id}`}));
   displayFeatured = [...displayFeatured, ...filler];
 }
-
 const fetchedNewArrivals = products.slice(0, 3).map((p) => ({
   id: p.id,
   image: p.image ? `http://localhost:5000/uploads/${p.image}` : k1,
   title: p.product_name,
-  price: `₹${Number(p.base_price || 0).toFixed(2)}`,
+  price: `₹${Number(p.base_price || 999).toFixed(2)}`,
 }));
 let displayNewArrivals = [...fetchedNewArrivals];
 if (displayNewArrivals.length < 3) {
@@ -192,11 +189,13 @@ if (displayNewArrivals.length < 3) {
               design at your fingertips.
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
-              <button className="bg-blue-600 text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700">
+              <button onClick={() => (window.location.href = "/product")}
+                className="bg-blue-600 text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700">
                 Shop Now
-                <img src={arrowIcon} alt="" className="w-4 h-4 invert"/>
+                <img src={arrowIcon} alt="" className="w-4 h-4 invert" />
               </button>
-              <button className="border border-gray-300 px-7 py-4 rounded-full hover:bg-white">
+              <button onClick={() => (window.location.href = "/services")}
+                className="border border-gray-300 px-7 py-4 rounded-full hover:bg-white" >
                 Explore Products
               </button>
             </div>
@@ -251,7 +250,7 @@ if (displayNewArrivals.length < 3) {
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
       {categories.map((item) => (
         <div key={item.id}
-          onClick={() => setActiveCategory(item.id)}
+          onClick={() => window.location.href = "/product"}
           className={`cursor-pointer rounded-2xl border p-6 transition-all duration-300 flex flex-col items-center text-center
           ${
             activeCategory === item.id
@@ -259,13 +258,30 @@ if (displayNewArrivals.length < 3) {
               : "bg-white border-gray-200 hover:shadow-md"
           }`} >
           <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4
+            className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 relative
             ${
               activeCategory === item.id
                 ? "bg-white"
                 : "bg-gray-100"
             }`}>
             <img src={item.image ? `http://localhost:5000/uploads/${item.image}` : ""} alt={item.category_name}  className="w-8 h-8 object-contain" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                cart.push({
+                  img: item.image ? `http://localhost:5000/uploads/${item.image}` : "",
+                  tag: "Category",
+                  title: item.category_name,
+                  price: "₹0",
+                });
+                localStorage.setItem("cart", JSON.stringify(cart));
+                window.location.href = "/cart";
+              }}
+              className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
+            >
+              <img src={cartIcon} alt="" className="w-3.5 h-3.5" />
+            </button>
           </div>
           <h3 className={`font-semibold ${   activeCategory === item.id
                 ? "text-white"
@@ -304,10 +320,9 @@ if (displayNewArrivals.length < 3) {
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {displayFeatured.map((product) => (
-        <div  key={product.id}
-          className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
+        <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
           <div className="relative">
-            <img  src={product.image} alt="" className="w-full h-64 object-cover" />
+            <img src={product.image} alt="" className="w-full h-64 object-cover" />
             {product.discount && (
               <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
                 {product.discount}
@@ -315,83 +330,39 @@ if (displayNewArrivals.length < 3) {
             )}
           </div>
           <div className="p-4">
-            <p className="text-xs uppercase text-gray-400 mb-2">
-              {product.category}
-            </p>
-            <h3 className="font-semibold text-lg text-gray-900">
-              {product.title}
-            </h3>
+            <p className="text-xs uppercase text-gray-400 mb-2">{product.category}</p>
+            <h3 className="font-semibold text-lg text-gray-900">{product.title}</h3>
             <div className="flex items-center gap-1 my-3">
               {[1, 2, 3, 4, 5].map((item) => (
                 <img key={item} src={starIcon} alt="" className="w-4 h-4" />
               ))}
             </div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-bold">
-                {product.price}
-              </span>
-              <span className="text-sm text-gray-400 line-through">
-                {product.oldPrice}
-              </span>
+              <span className="text-xl font-bold">{product.price}</span>
+              <span className="text-sm text-gray-400 line-through">{product.oldPrice}</span>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 border border-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">
-                Details
-              </button>
-              <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                <img src={cartIcon} alt="" className="w-4 h-4 invert"/>
-                Add
+              <button onClick={() => window.location.href = "/product"} className="flex-1 border border-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Details</button>
+              <button
+                onClick={() => {
+                  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                  cart.push({
+                    img: product.image,
+                    tag: product.category,
+                    title: product.title,
+                    price: product.price,
+                  });
+                  localStorage.setItem("cart", JSON.stringify(cart));
+                  window.location.href = "/cart";
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <img src={cartIcon} alt="" className="w-4 h-4 invert" />
+                Add to Cart
               </button>
             </div>
           </div>
         </div>
       ))}
-    </div>
-  </div>
-</section>
-<section className="bg-[#f7f7f7] py-16">
-  <div className="max-w-7xl mx-auto px-6">
-    <div className="grid lg:grid-cols-2 overflow-hidden rounded-3xl shadow-xl">
-      <div className="bg-yellow-400 p-8 md:p-14 flex flex-col justify-center">
-        <span className="bg-black text-white text-xs px-4 py-2 rounded-full w-fit mb-6">
-          LIMITED TIME OFFER
-        </span>
-        <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
-          Mid-Season Sale:
-          <br />
-          Up to 60% Off
-          <br />
-          Selected Items
-        </h2>
-        <p className="text-white/90 mt-5">
-          Upgrade your lifestyle with our most popular products
-          at unbeatable prices.
-        </p>
-        <div className="flex gap-3 mt-8 flex-wrap">
-          <div className="bg-purple-600 text-white rounded-lg px-4 py-3 text-center">
-            <div className="font-bold">02</div>
-            <div className="text-xs">Days</div>
-          </div>
-          <div className="bg-purple-600 text-white rounded-lg px-4 py-3 text-center">
-            <div className="font-bold">14</div>
-            <div className="text-xs">Hrs</div>
-          </div>
-          <div className="bg-purple-600 text-white rounded-lg px-4 py-3 text-center">
-            <div className="font-bold">35</div>
-            <div className="text-xs">Min</div>
-          </div>
-          <div className="bg-purple-600 text-white rounded-lg px-4 py-3 text-center">
-            <div className="font-bold">08</div>
-            <div className="text-xs">Sec</div>
-          </div>
-        </div>
-        <button className="mt-8 bg-black text-white px-8 py-3 rounded-full w-fit">
-          Shop the Sale Now
-        </button>
-      </div>
-      <div>
-        <img src={o1} alt="" className="w-full h-full object-cover min-h-[300px]"/>
-      </div>
     </div>
   </div>
 </section>
@@ -427,9 +398,22 @@ if (displayNewArrivals.length < 3) {
             <p className="text-blue-600 font-bold mt-1">
               {item.price}
             </p>
-            <button className="mt-2 flex items-center gap-2 text-sm text-gray-500 hover:text-black">
+            <button
+              onClick={() => {
+                const cart = JSON.parse(localStorage.getItem("cart")) || [];
+                cart.push({
+                  img: item.image,
+                  tag: "New Arrivals",
+                  title: item.title,
+                  price: item.price,
+                });
+                localStorage.setItem("cart", JSON.stringify(cart));
+                window.location.href = "/cart";
+              }}
+              className="mt-2 flex items-center gap-2 text-sm text-gray-500 hover:text-black" >
               Add to Cart
-  <img src={addIcon} alt="" className="w-4 h-4"  /></button>
+              <img src={addIcon} alt="" className="w-4 h-4" />
+            </button>
           </div>
         </div>
       ))}
@@ -449,8 +433,7 @@ if (displayNewArrivals.length < 3) {
   className={`rounded-2xl p-8 border cursor-pointer transition-all duration-300 ${
     activeReview === item.id
       ? "bg-yellow-300 border-yellow-300"
-      : "bg-white hover:shadow-lg"
-  }`}>
+      : "bg-white hover:shadow-lg" }`}>
             <div className="flex gap-1 mb-5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <img key={star} src={starIcon} alt="" className="w-4 h-4"/>
@@ -523,7 +506,6 @@ if (displayNewArrivals.length < 3) {
         </div>
       </div>
     </div>
-
   </div>
 </section>
   <Footer />

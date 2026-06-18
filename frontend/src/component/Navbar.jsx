@@ -1,92 +1,137 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import searchIcon from "../assets/search.png";
 import heartIcon from "../assets/heart.png";
 import cartIcon from "../assets/shopping-cart.png";
 import userIcon from "../assets/user.png";
 import menuIcon from "../assets/menu1.png";
+import sunIcon from "../assets/sun.png";
+import moonIcon from "../assets/moon.png";
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark" || document.documentElement.classList.contains("dark");
+  });
+  const location = useLocation();
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+  const navLink = (path) =>
+    location.pathname === path
+      ? "text-purple-600 font-semibold border-b-2 border-purple-600 pb-0.5"
+      : `hover:text-purple-600 transition-colors duration-200 ${darkMode ? "text-gray-300" : "text-gray-600"}`;
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header className={`sticky top-0 z-50 border-b shadow-sm transition-colors duration-300 ${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"}`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-purple-600 font-bold text-xl">
-              Shop.
-            </h1>
+            <Link to="/home" className="md:hidden">
+              <h1 className="text-purple-600 font-bold text-xl">Home</h1>
+            </Link>
             <nav className="hidden md:flex items-center gap-7">
-              <Link to="/home" className="text-purple-600 font-medium">
-                Home
-              </Link>
-              <Link to="/services"
-                className="text-gray-600 hover:text-purple-600">
-                Products
-              </Link>
-              <Link to="/categories"
-                className="text-gray-600 hover:text-purple-600" >
-                Categories
-              </Link>
-              <Link  to="/about"
-                className="text-gray-600 hover:text-purple-600" >
-                About
-              </Link>
-              <Link to="/contact"
-                className="text-gray-600 hover:text-purple-600" >
-                Contact
-              </Link>
+              <Link to="/home" className={navLink("/home")}>Home</Link>
+              <Link to="/services" className={navLink("/services")}>Products</Link>
+              <Link to="/categories" className={navLink("/categories")}>Categories</Link>
+              <Link to="/about" className={navLink("/about")}>About</Link>
+              <Link to="/contact" className={navLink("/contact")}>Contact</Link>
             </nav>
           </div>
-          <div className="hidden lg:flex items-center bg-gray-100 rounded-full px-5 py-3 w-[420px]">
-            <img src={searchIcon} alt="" className="w-5 h-5 opacity-60" />
+          <div className={`hidden lg:flex items-center rounded-full px-5 py-3 w-[420px] transition-colors duration-300 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+            <img src={searchIcon} alt="" className={`w-5 h-5 opacity-60 ${darkMode ? "invert" : ""}`} />
             <input type="text" placeholder="Search products..."
-              className="bg-transparent outline-none ml-3 w-full text-sm" />
+              className={`bg-transparent outline-none ml-3 w-full text-sm ${darkMode ? "text-white placeholder-gray-400" : "text-black"}`}/>
           </div>
           <div className="flex items-center gap-3">
-            <img src={heartIcon} alt=""
-              className="w-5 h-5 md:w-6 md:h-6 cursor-pointer" />
-            <div className="relative cursor-pointer">
-              <img src={cartIcon} alt="" className="w-5 h-5 md:w-6 md:h-6"/>
-              <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                3
-              </span>
+            <div className="flex items-center gap-0.5 sm:gap-1 mr-2">
+              <button
+                onClick={() => setDarkMode(false)}
+                title="Light Mode"
+                className={`p-2 rounded-full transition-all duration-300 ${!darkMode ? "bg-yellow-100 shadow-md scale-105" : "hover:bg-gray-700"}`}>
+                <img src={sunIcon} alt="light" className="w-4 h-4 object-contain" />
+              </button>
+              <button onClick={() => setDarkMode(true)} title="Dark Mode"
+                className={`p-2 rounded-full transition-all duration-300 ${darkMode ? "bg-gray-700 shadow-md scale-105" : "hover:bg-gray-100"}`} >
+                <img src={moonIcon} alt="dark" className="w-4 h-4 object-contain" />
+              </button>
             </div>
-            <Link  to="/login"
-              className="hidden sm:flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full text-sm" >
+            <img src={heartIcon} alt="" className={`w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:scale-110 transition-transform ${darkMode ? "invert" : ""}`} />
+            <Link to="/cart" className="relative cursor-pointer flex items-center gap-1">
+              <img src={cartIcon} alt="" className={`w-5 h-5 md:w-6 md:h-6 hover:scale-110 transition-transform ${darkMode ? "invert" : ""}`} />
+              <span className={`hidden sm:inline font-semibold text-sm ${darkMode ? "text-gray-200" : "text-gray-700"}`}>Cart</span>
+              <span className="absolute -top-2 -left-2 bg-purple-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                {JSON.parse(localStorage.getItem("cart"))?.length || 0}
+              </span>
+            </Link>
+            <Link to="/login"
+              className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200 ${
+                location.pathname === "/login"
+                  ? "bg-purple-800 text-white"
+                  : "bg-purple-600 text-white hover:bg-purple-700"}`}>
               <img src={userIcon} alt="" className="w-4 h-4 invert" />
               Login
             </Link>
-            <Link to="/profile"
-              className="hidden sm:block border border-purple-600 px-4 py-2 rounded-full text-sm hover:bg-purple-600 hover:text-white"  >
-              Profile
-            </Link>
+            <div className="relative group hidden sm:block">
+              <Link  to="/profile"
+                className={`block px-4 py-2 rounded-full text-sm transition-all duration-200 ${
+                  location.pathname === "/profile"
+                    ? "bg-purple-600 text-white border border-purple-600"
+                    : "border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white" }`} >
+                Profile
+              </Link>
+              <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
+                <div className={`p-4 border-b ${darkMode ? "border-gray-700" : "border-gray-100"}`}>
+                  <p className={`text-sm font-semibold ${darkMode ? "text-gray-200" : "text-gray-800"}`}>My Account</p>
+                  <p className={`text-xs truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{JSON.parse(localStorage.getItem("user"))?.email || "Guest"}</p>
+                </div>
+                <div className="p-2">
+                  <Link to="/profile" className={`block px-4 py-2 text-sm rounded-lg ${darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-purple-50"}`}>View Profile</Link>
+                  <button onClick={() => { localStorage.removeItem("user"); window.location.href="/login"; }} className={`w-full text-left block px-4 py-2 text-sm rounded-lg ${darkMode ? "text-red-400 hover:bg-gray-700" : "text-red-600 hover:bg-red-50"}`}>Logout</button>
+                </div>
+              </div>
+            </div>
             <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden">
-              <img src={menuIcon} alt="" className="w-7 h-7"  />
+              <img src={menuIcon} alt="" className={`w-7 h-7 ${darkMode ? "invert" : ""}`} />
             </button>
           </div>
         </div>
         {menuOpen && (
-          <div className="md:hidden border-t bg-white py-4">
-            <div className="flex flex-col gap-4">
-              <Link to="/home">Home</Link>
-              <Link to="/services">
-                Products
-              </Link>
-              <Link to="/categories">
-                Categories
-              </Link>
-              <Link to="/about">
-                About
-              </Link>
-              <Link to="/contact">
-                Contact
-              </Link>
+          <div className={`md:hidden border-t py-4 ${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-100"}`}>
+            <div className="flex flex-col gap-4 px-2">
+              {[
+                { path: "/services", label: "Products" },
+                { path: "/categories", label: "Categories" },
+                { path: "/about", label: "About" },
+                { path: "/contact", label: "Contact" },
+              ].map(({ path, label }) => (
+                <Link key={path} to={path} onClick={() => setMenuOpen(false)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    location.pathname === path
+                      ? "bg-purple-50 text-purple-600 font-semibold"
+                      : `${darkMode ? "text-gray-300 hover:text-purple-400" : "text-gray-700 hover:text-purple-600"}`
+                  }`}>
+                  {label}
+                </Link>
+              ))}
               <Link to="/login"
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg text-center">
+                onClick={() => setMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-center text-sm font-semibold ${
+                  location.pathname === "/login"
+                    ? "bg-purple-800 text-white"
+                    : "bg-purple-600 text-white"
+                }`} >
                 Login
               </Link>
-              <Link to="/profile"
-                className="border border-purple-600 px-4 py-2 rounded-lg text-center" >
+              <Link to="/profile" onClick={() => setMenuOpen(false)}
+                className={`px-4 py-2 rounded-lg text-center text-sm font-semibold border border-purple-600 ${
+                  location.pathname === "/profile"
+                    ? "bg-purple-600 text-white"
+                    : "text-purple-600"  }`} >
                 Profile
               </Link>
             </div>
@@ -96,5 +141,4 @@ const Navbar = () => {
     </header>
   );
 };
-
 export default Navbar;
