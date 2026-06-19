@@ -67,12 +67,8 @@ const Contact = () => {
           background: "linear-gradient(135deg, #1a0a00 0%, #3b1a00 35%, #c8860a 70%, #f5c842 100%)",
           minHeight: "420px",
         }} >
-        <div className="absolute top-[-80px] right-[-80px] w-[400px] h-[400px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #f5c842, transparent)" }} />
-        <div className="absolute bottom-[-60px] left-[-60px] w-[300px] h-[300px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, #ff8c00, transparent)" }} />
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-28 text-center">
-          <span className="inline-block bg-white/10 backdrop-blur-sm border border-white/20 text-yellow-300 text-sm font-semibold px-5 py-2 rounded-full mb-6 tracking-wider">
+          <span className="inline-block bg-white backdrop-blur-sm border border-white/20 text-black text-sm font-semibold px-5 py-2 rounded-full mb-6 tracking-wider">
              GET IN TOUCH
           </span>
           <h1
@@ -171,7 +167,7 @@ const Contact = () => {
                 ))}
               </div>
               <div className="mt-8 p-6 rounded-3xl"
-                style={{ background: "linear-gradient(135deg, #1a0a00, #3b1a00)" }}>
+                style={{ background: "#6f4e37" }}>
                 <p className="text-white font-bold text-lg mb-1">Follow Our Journey</p>
                 <p className="text-white/50 text-sm mb-5">Stay updated with new collections & offers</p>
                 <div className="flex gap-3">
@@ -259,7 +255,7 @@ const Contact = () => {
                 </label>
                 <button type="submit" disabled={submitting}
                   className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-lg transition-all duration-300 disabled:opacity-60 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.99]"
-                  style={{ background: "linear-gradient(135deg, #c8860a, #f5c842, #c8860a)", backgroundSize: "200%" }} >
+                  style={{ background: "#6f4e37", backgroundSize: "200%" }} >
                   <img src={send} alt="" className="w-5 h-5 invert" />
                   {submitting ? "Sending..." : "Submit Enquiry"}
                 </button>

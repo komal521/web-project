@@ -94,6 +94,15 @@ CREATE TABLE IF NOT EXISTS settings (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 `;
+const createWishlistsTable = `
+CREATE TABLE IF NOT EXISTS wishlists (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  product_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_wishlist (user_id, product_id)
+);
+`;
 db.query(createUsersTable, (err) => {
   if (err) console.error('Error creating users table:', err);
   else console.log('Users table ready!');
@@ -112,7 +121,11 @@ db.query(createUsersTable, (err) => {
           db.query(createSettingsTable, (err) => {
             if (err) console.error('Error creating settings table:', err);
             else console.log('Settings table ready!');
-            process.exit();
+            db.query(createWishlistsTable, (err) => {
+              if (err) console.error('Error creating wishlists table:', err);
+              else console.log('Wishlists table ready!');
+              process.exit();
+            });
           });
         });
       });

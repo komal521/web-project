@@ -70,6 +70,15 @@ const Categories =() =>{
   ];
 const [categories,setCategories] = useState([]);
 const [activePage, setActivePage] = useState(1);
+const [showcase, setShowcase] = useState([]);
+const [wishlistedIds, setWishlistedIds] = useState(() => {
+  const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+  const ids = {};
+  wishlist.forEach((item) => {
+    if (item && item.id) ids[item.id] = true;
+  });
+  return ids;
+});
 useEffect(() => {
   fetchCategories();
 }, []);
@@ -81,40 +90,85 @@ const fetchCategories = async () => {
     );
 
     const data = await res.json();
-console.log("API Response:", data);
-    console.log(data);
-setCategories(
-  Array.isArray(data)
-    ? data
-    : data.categories || []
-);
-    
+    console.log("API Response:", data);
+    setCategories(
+      Array.isArray(data)
+        ? data
+        : data.categories || []
+    );
   } catch (error) {
     console.log(error);
   }
 };
-console.log("Categories State:", categories);
+
+const handleWishlist = (e, item) => {
+  e.stopPropagation();
+
+  const wishlist =
+    JSON.parse(localStorage.getItem("wishlist")) || [];
+
+  const exists = wishlist.find(
+    (p) => p.id === item.id
+  );
+
+  if (exists) {
+    const updatedWishlist = wishlist.filter(
+      (p) => p.id !== item.id
+    );
+
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify(updatedWishlist)
+    );
+
+    setWishlistedIds((prev) => ({
+      ...prev,
+      [item.id]: false,
+    }));
+  } else {
+    const newItem = {
+      id: item.id,
+      image: `http://localhost:5000/uploads/${item.image}`,
+      name: item.category_name,
+      category: "Category",
+      price: "₹1,450",
+    };
+
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify([...wishlist, newItem])
+    );
+
+    setWishlistedIds((prev) => ({
+      ...prev,
+      [item.id]: true,
+    }));
+  }
+  window.dispatchEvent(
+    new Event("wishlistUpdated")
+  );
+};
   return(
     <>
     <Navbar/>
     <div className ="bg-[#f5f5fa] min-h-screen py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="relative overflow-hidden  rounded-3xl h-[220px] md:h-[320px]">
+        <div className="relative overflow-hidden rounded-3xl h-[220px] md:h-[320px]">
           <img src= {cloths}alt="Luxury Collection" className="w-full h-full object-cover"/>
           <div className="absolute left-6 md:left-12 top-1/2 -translate-y-1/2 text-white max-w-md">
-          <span className="bg-yellow-400 text-black top-7 px-3 py-1 rounded-full text-xs font-semibold">   Curated Selection</span>
-          <h1 className="mt-3 text-3xl md:text-6xl font-bold leading-none"> Luxury <br/>
-          <span className="text-blue-400 italic">  Essentials</span></h1>
-          <p className="mt-3 text-sm  md:text-base"> Explore our artisan-crafted collection designed
-                for the modern lifestyle.</p>
-          <div className="flex gap-3 mt-4">
-          <button className="bg-white text-purple-700  px-4 py-2 rounded-lg font-medium">  Explore All</button>
-          <button className= "bg-white/90 text-gray-700 px-4 py-2 rounded-lg font-medium">View Lookbook</button>
-          </div>
-           </div>
+            <span className="bg-white text-black top-7 px-3 py-1 rounded-full text-xs font-semibold">   Curated Selection</span>
+            <h1 className="mt-3 text-3xl md:text-6xl font-bold leading-none"> Luxury <br/>
+            <span className="text-black italic">  Essentials</span></h1>
+            <p className="mt-3 text-sm  md:text-base"> Explore our artisan-crafted collection designed
+                  for the modern lifestyle.</p>
+            <div className="flex gap-3 mt-4">
+              <button className="bg-[#6f4e37] hover:bg-[#5a3d2b] text-white px-4 py-2 rounded-lg font-medium">  Explore All</button>
+              <button className= "bg-white/90 text-gray-700 px-4 py-2 rounded-lg font-medium">View Lookbook</button>
             </div>
-             </div>
-             <div className ="max-w-7xl mx-auto mt-8">
+          </div>
+        </div>
+      </div>
+      <div className ="max-w-7xl mx-auto mt-8">
               <div className="flex flex-col lg:flex-row gap-6">
               <div className = "w-full lg:w-72 bg-white rounded-2xl p-5 shadow-sm ">
                 <div className ="flex items-center justify-between  mb-6">
@@ -131,14 +185,12 @@ console.log("Categories State:", categories);
                   <img src={downArrow} alt="" className="W-3 h-3"/>
                   </div>
                <div className="space-y-2 text-sm text-gray-600">
-  {categories.map((item) => (
-    <label
-      key={item.id}
-      className="flex items-center gap-2" >
-      <input type="checkbox" />
-      {item.category_name}
-              </label>
-                   ))}
+                {categories.map((item) => (
+               <label  key={item.id}
+               className="flex items-center gap-2" >
+                <input type="checkbox" />
+             {item.category_name}
+              </label> ))}
                    </div>
                                 </div>
                         <div className="border-b pb-4 mb-4">
@@ -146,7 +198,7 @@ console.log("Categories State:", categories);
                             <h4 className=" text-sm font-medium">Price Range</h4>
                             <img src={downArrow} alt="" className="w-3 h-3"/>
                           </div>
-                          <input type="range" min ="50" max ="200" className="w-full accent-purple-800"/>
+                          <input type="range" min ="50" max ="200" className="w-full accent-[#6f4e37]"/>
                           <div className="flex gap-3 mt-4">
                             <div>
                               <p className="text-[10px] text-gray-600 mb-1"> MIN </p>
@@ -187,20 +239,18 @@ console.log("Categories State:", categories);
                                 </label>
                               </div>
                             </div>
-                            {/*Colour Palette*/}
                             <div className="border-b pb-4  mb-6">
                               <div className="flex items-center justify-between" >
                                 <h4 className="text-sm  font-medium"> Colour Palette</h4>
                                 <img  src={downArrow} alt="" className=" w-3 h-3"/>
                               </div>
                             </div>
-                            <div  className=" bg-purple-400 border border-purple-500 rounded-2xl p-4">
-                              <h4 className="text-yellow-800 font-semibold mb-2"> Prive Membership</h4>
-                              <p className="text-xs text-gray-600 mb-4"> Join our inner circle for exclusive early access and bespoke concierge services.</p>
+                            <div  className=" bg-[#6f4e37] border border-black rounded-2xl p-4">
+                              <h4 className="text-black font-semibold mb-2"> Prive Membership</h4>
+                              <p className="text-xs text-white mb-4"> Join our inner circle for exclusive early access and bespoke concierge services.</p>
                               <button className="bg-white text-black  px-4 py-2 rounded-full text-xs font-medium">Join Now</button>
                             </div>
                              </div>
-                             {/* Products Section */}
                      <div className="flex-1">
                       <div className="flex items-center justify-between mb-6">
                        <p className="text-sm text-gray-500">
@@ -214,43 +264,38 @@ console.log("Categories State:", categories);
                </button>
                  </div>
                   </div>
- <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-  {categories.map((item) => (
-   <div
-  key={item.id}
-  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition"
->
+             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {categories.map((item) => (
+             <div key={item.id}
+  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition">
   <div className="relative">
-    <img
-      src={`http://localhost:5000/uploads/${item.image}`}
-      alt={item.category_name}
-      className="w-full h-64 object-cover"
-    />
-
-    <button className="absolute top-3 right-3 bg-white rounded-full p-2 shadow">
-      <img src={heart} alt="" className="w-4 h-4" />
+    <img src={`http://localhost:5000/uploads/${item.image}`} alt={item.category_name}
+      className="w-full h-64 object-cover" />
+    <button onClick={(e) => handleWishlist(e, item)}
+      className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:scale-110 transition" >
+      <svg  className="w-4 h-4"  fill={wishlistedIds[item.id] ? "#e11d48" : "none"}
+        stroke={wishlistedIds[item.id] ? "#e11d48" : "#6b7280"}
+        strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
     </button>
     <button 
       onClick={() => {
         const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
         cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.category_name, tag: "Category", price: "₹1,450" });
         localStorage.setItem("cart", JSON.stringify(cartItems));
-        window.location.href = "/cart";
-      }}
+        window.location.href = "/cart"; }}
       className="absolute top-3 right-12 bg-white rounded-full p-2 shadow hover:bg-gray-100 transition">
       <img src={cart} alt="" className="w-4 h-4" />
     </button>
   </div>
-
   <div className="p-4">
     <p className="text-[10px] tracking-wider text-gray-500 uppercase">
       CATEGORY
     </p>
-
     <h3 className="mt-1 font-medium text-gray-800">
       {item.category_name}
     </h3>
-
     <button 
       onClick={() => {
         const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
@@ -258,11 +303,11 @@ console.log("Categories State:", categories);
         localStorage.setItem("cart", JSON.stringify(cartItems));
         window.location.href = "/cart";
       }}
-      className="mt-4 w-full bg-purple-700 hover:bg-purple-800 transition text-white py-2 rounded-lg">
+      className="mt-4 w-full bg-[#6f4e37] hover:bg-[#5a3d2b] transition text-white py-2 rounded-lg">
       Add to Cart
-    </button>
-  </div>
-</div>
+         </button>
+            </div>
+            </div>
                     ))}
                       </div>
                         </div>                
@@ -278,7 +323,7 @@ console.log("Categories State:", categories);
       className={`w-10 h-10 rounded-lg transition
         ${
           activePage === page
-            ? "bg-purple-700 text-white shadow-lg"
+            ? "bg-[#6f4e37] text-white shadow-lg"
             : "bg-white text-gray-700 border"
         }`} >
       {page}

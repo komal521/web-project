@@ -39,6 +39,10 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [savedAddress, setSavedAddress] = useState({ name: "", line1: "", city: "", pincode: "", phone: "" });
+  const [addressSaved, setAddressSaved] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState("");
+  const [upiId, setUpiId] = useState("");
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user")) || {};
     setUserData({
@@ -146,45 +150,57 @@ const Profile = () => {
     navigate("/login");
   };
 
+  const handleSaveAddress = async () => {
+    if (!userData.id) { alert("Please login to save address"); return; }
+    const fullAddress = `${savedAddress.name}, ${savedAddress.line1}, ${savedAddress.city} - ${savedAddress.pincode}, Ph: ${savedAddress.phone}`;
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/profile/${userData.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: fullAddress }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAddressSaved(true);
+        setUserData(prev => ({ ...prev, address: fullAddress }));
+        localStorage.setItem("user", JSON.stringify({ ...JSON.parse(localStorage.getItem("user")), address: fullAddress }));
+        setTimeout(() => setAddressSaved(false), 3000);
+      }
+    } catch (err) { console.log(err); }
+  };
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString("en-IN", {
       day: "2-digit", month: "short", year: "numeric",
     });
   };
-
   const formatINR = (val) =>
     `₹${Number(val || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
-
   const statusColor = (status) => {
     const s = (status || "Pending").toLowerCase();
     if (s === "completed") return "bg-green-100 text-green-700";
     if (s === "cancelled") return "bg-red-100 text-red-600";
     return "bg-yellow-100 text-yellow-700";
   };
-
   const statsCards = [
-    { label: "Total Orders", value: orderCount, img: bag, bg: "bg-purple-100" },
-    { label: "Wishlist Items", value: wishlistCount, img: heart, bg: "bg-pink-100" },
+    { label: "Total Orders", value: orderCount, img: bag, bg: "bg-amber-100" },
+    { label: "Wishlist Items", value: wishlistCount, img: heart, bg: "bg-orange-100" },
     { label: "Cart Items", value: cartCount, img: checkout, bg: "bg-yellow-100" },
-    { label: "Reward Points", value: rewardPoints.toLocaleString("en-IN"), img: medal, bg: "bg-purple-100" },
+    { label: "Reward Points", value: rewardPoints.toLocaleString("en-IN"), img: medal, bg: "bg-amber-100" },
   ];
-
   return (
     <>
       <Navbar />
       <div className="max-w-6xl mx-auto mt-10 px-4 pb-12">
-
-        {/* Hero Banner */}
-        <div className="bg-[#E6D38B] rounded-2xl p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow">
+        <div className="bg-[#c0b6af] rounded-2xl p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow">
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
             <div className="relative">
               {userData.profileImage ? (
                 <img src={userData.profileImage} alt=""
-                  className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-yellow-500" />
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-black" />
               ) : (
                 <img src={b3} alt=""
-                  className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-yellow-500" />
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-black" />
               )}
               <div className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow cursor-pointer hover:bg-yellow-50 transition">
                 <img src={pencil} alt="" className="w-5 h-5" />
@@ -195,12 +211,11 @@ const Profile = () => {
                 {loading ? "Loading..." : userData.fullName || "Guest User"}
               </h2>
               <p className="text-gray-700 mt-1 text-sm">{userData.email}</p>
-              <span className="inline-block mt-2 bg-yellow-800 text-white text-xs font-bold px-3 py-1 rounded-full tracking-wider">
+              <span className="inline-block mt-2 bg-[#6f4e37] text-white text-xs font-bold px-3 py-1 rounded-full tracking-wider">
                 GOLD PATRON
               </span>
             </div>
           </div>
-
           <div className="flex flex-col items-center gap-3">
             {saveMsg && (
               <p className={`text-sm font-medium px-4 py-1 rounded-full ${saveMsg.startsWith("✓") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
@@ -210,7 +225,7 @@ const Profile = () => {
             {isEditing ? (
               <div className="flex gap-3">
                 <button onClick={handleSave} disabled={isSaving}
-                  className="bg-green-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-green-700 disabled:opacity-60 transition">
+                  className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-green-700 disabled:opacity-60 transition">
                   {isSaving ? "Saving..." : "Save Profile"}
                 </button>
                 <button onClick={() => setIsEditing(false)}
@@ -219,8 +234,8 @@ const Profile = () => {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setIsEditing(true)}
-                className="bg-purple-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-purple-800 transition">
+              <button onClick={() => navigate("/edit-profile")}
+                className="bg-[#6f4e37] text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-[#5a3d2b] transition">
                 Edit Profile
               </button>
             )}
@@ -244,7 +259,7 @@ const Profile = () => {
             <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
               {["info", "orders", "activity"].map((tab) => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition ${activeTab === tab ? "bg-white shadow text-purple-700" : "text-gray-500 hover:text-gray-700"}`}>
+                  className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition ${activeTab === tab ? "bg-white shadow text-[#6f4e37]" : "text-gray-500 hover:text-gray-700"}`}>
                   {tab === "info" ? "Personal Info" : tab === "orders" ? `My Orders (${orderCount})` : "Activity Timeline"}
                 </button>
               ))}
@@ -256,15 +271,18 @@ const Profile = () => {
                     <h2 className="text-lg font-bold text-gray-800">Personal Information</h2>
                     <p className="text-gray-400 text-sm mt-0.5">Manage your contact and shipping details.</p>
                   </div>
-                  <button onClick={() => setIsEditing(!isEditing)}>
-                    <img src={pencil} alt="" className="w-5 h-5 cursor-pointer opacity-60 hover:opacity-100 transition" />
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="focus:outline-none" >
+                    <img src={pencil} alt=""
+                     className="w-5 h-5 cursor-pointer opacity-60 hover:opacity-100 transition" />
                   </button>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Full Name</label>
-                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-purple-400 transition">
+                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-amber-400 transition">
                         <img src={user} alt="" className="w-5 h-5 flex-shrink-0" />
                         {isEditing ? (
                           <input type="text" className="w-full outline-none text-gray-700 text-sm"
@@ -277,7 +295,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Email Address</label>
-                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-purple-400 transition">
+                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-amber-400 transition">
                         <img src={gmail} alt="" className="w-5 h-5 flex-shrink-0" />
                         {isEditing ? (
                           <input type="email" className="w-full outline-none text-gray-700 text-sm"
@@ -288,10 +306,9 @@ const Profile = () => {
                         )}
                       </div>
                     </div>
-                    {/* Phone */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Phone Number</label>
-                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-purple-400 transition">
+                      <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-amber-400 transition">
                         <img src={phone} alt="" className="w-5 h-5 flex-shrink-0" />
                         {isEditing ? (
                           <input type="text" className="w-full outline-none text-gray-700 text-sm"
@@ -310,10 +327,9 @@ const Profile = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="mt-5">
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Primary Billing Address</label>
-                    <div className="flex items-start gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-purple-400 transition">
+                    <div className="flex items-start gap-3 border border-gray-200 rounded-xl px-4 py-3 min-h-[52px] focus-within:border-amber-400 transition">
                       <img src={location} alt="" className="w-5 h-5 mt-0.5 flex-shrink-0" />
                       {isEditing ? (
                         <textarea className="w-full outline-none resize-none text-gray-700 text-sm"
@@ -340,7 +356,7 @@ const Profile = () => {
                       </div>
                     </div>
                     <button onClick={() => setNotifications(!notifications)}
-                      className={`relative w-14 h-7 rounded-full transition-all ${notifications ? "bg-purple-600" : "bg-gray-300"}`}>
+                      className={`relative w-14 h-7 rounded-full transition-all ${notifications ? "bg-[#6f4e37]" : "bg-gray-300"}`}>
                       <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-all ${notifications ? "right-0.5" : "left-0.5"}`} />
                     </button>
                   </div>
@@ -389,7 +405,7 @@ const Profile = () => {
                 </div>
                 {orders.length === 0 ? (
                   <div className="p-12 text-center">
-                    <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
                       <img src={bag} alt="" className="w-8 h-8 object-contain" />
                     </div>
                     <p className="text-gray-500 font-medium">No orders yet</p>
@@ -435,10 +451,10 @@ const Profile = () => {
                   {activities.length === 0 ? (
                     <p className="text-gray-500 text-center">No recent activities</p>
                   ) : (
-                    <div className="space-y-6 border-l-2 border-purple-100 ml-3 pl-5">
+                    <div className="space-y-6 border-l-2 border-amber-200 ml-3 pl-5">
                       {activities.map((act, i) => (
                         <div key={i} className="relative">
-                          <span className="absolute -left-7 top-1 w-4 h-4 rounded-full bg-purple-500 border-2 border-white shadow" />
+                          <span className="absolute -left-7 top-1 w-4 h-4 rounded-full bg-[#6f4e37] border-2 border-white shadow" />
                           <p className="text-sm text-gray-800">
                             <span className="font-semibold">{act.name}</span> {act.text}
                           </p>
@@ -450,22 +466,118 @@ const Profile = () => {
                 </div>
               </div>
             )}
+            {activeTab === "address" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                  <h2 className="text-lg font-bold text-gray-800">Saved Address</h2>
+                  <p className="text-sm text-gray-400 mt-0.5">Add and save your delivery address</p>
+                </div>
+                <div className="p-6 space-y-4">
+                  {addressSaved && <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-medium">✓ Address saved successfully!</div>}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Full Name</label>
+                      <input type="text" placeholder="Enter full name" value={savedAddress.name}
+                        onChange={(e) => setSavedAddress({...savedAddress, name: e.target.value})}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Phone</label>
+                      <input type="text" placeholder="+91 XXXXX XXXXX" value={savedAddress.phone}
+                        onChange={(e) => setSavedAddress({...savedAddress, phone: e.target.value})}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 transition" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Address Line</label>
+                    <input type="text" placeholder="Street, Apartment, Area" value={savedAddress.line1}
+                      onChange={(e) => setSavedAddress({...savedAddress, line1: e.target.value})}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 transition" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">City</label>
+                      <input type="text" placeholder="City" value={savedAddress.city}
+                        onChange={(e) => setSavedAddress({...savedAddress, city: e.target.value})}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Pincode</label>
+                      <input type="text" placeholder="000000" value={savedAddress.pincode}
+                        onChange={(e) => setSavedAddress({...savedAddress, pincode: e.target.value})}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 transition" />
+                    </div>
+                  </div>
+                  <button onClick={handleSaveAddress}
+                    className="w-full bg-[linear-gradient(135deg,#f3d3b5,#b78457,#6f4e37)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-md">
+                    Save Address
+                  </button>
+                </div>
+              </div>
+            )}
+            {activeTab === "payment" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                  <h2 className="text-lg font-bold text-gray-800">Payment Methods</h2>
+                  <p className="text-sm text-gray-400 mt-0.5">Choose your preferred payment option</p>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className={`border-2 rounded-2xl p-4 cursor-pointer transition ${selectedPayment === "upi" ? "border-[#6f4e37] bg-amber-50" : "border-gray-200 hover:border-amber-300"}`}
+                    onClick={() => setSelectedPayment("upi")}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"><span className="text-xl">📱</span></div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">UPI Payment</h4>
+                        <p className="text-xs text-gray-500">Google Pay, PhonePe, Paytm</p>
+                      </div>
+                      <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPayment === "upi" ? "border-[#6f4e37]" : "border-gray-300"}`}>
+                        {selectedPayment === "upi" && <div className="w-2.5 h-2.5 rounded-full bg-[#6f4e37]" />}
+                      </div>
+                    </div>
+                    {selectedPayment === "upi" && (
+                      <div className="mt-4">
+                        <input type="text" placeholder="Enter UPI ID (e.g. name@paytm)" value={upiId}
+                          onChange={(e) => setUpiId(e.target.value)}
+                          className="w-full border border-amber-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6f4e37] transition" />
+                      </div>
+                    )}
+                  </div>
+                  <div className={`border-2 rounded-2xl p-4 cursor-pointer transition ${selectedPayment === "cod" ? "border-[#6f4e37] bg-amber-50" : "border-gray-200 hover:border-amber-300"}`}
+                    onClick={() => setSelectedPayment("cod")}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center"><span className="text-xl">💵</span></div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Cash on Delivery</h4>
+                        <p className="text-xs text-gray-500">Pay cash when order arrives</p>
+                      </div>
+                      <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPayment === "cod" ? "border-[#6f4e37]" : "border-gray-300"}`}>
+                        {selectedPayment === "cod" && <div className="w-2.5 h-2.5 rounded-full bg-[#6f4e37]" />}
+                      </div>
+                    </div>
+                  </div>
+                  {selectedPayment && (
+                    <button className="w-full bg-[linear-gradient(135deg,#f3d3b5,#b78457,#6f4e37)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-md">
+                      ✓ Confirm {selectedPayment === "upi" ? "UPI" : "Cash on Delivery"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div className="lg:col-span-1">
             <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase mb-4">Quick Management</h3>
             <div className="space-y-3">
               {[
-                { label: "My Orders", sub: `${orderCount} orders placed`, icon: box, to: null },
-                { label: "My Wishlist", sub: "Items you've been eyeing", icon: heart, to: null },
-                { label: "Shopping Cart", sub: `${cartCount} items ready for checkout`, icon: shoppingCart, to: "/cart" },
-                { label: "Saved Addresses", sub: "Manage delivery locations", icon: location, to: null },
-                { label: "Payment Methods", sub: "Secure cards and wallets", icon: appointment, to: null },
+                { label: "My Orders", sub: `${orderCount} orders placed`, icon: box, onClick: () => setActiveTab("orders") },
+                { label: "My Wishlist", sub: "Items you've been eyeing", icon: heart, onClick: () => navigate("/wishlist") },
+                { label: "Saved Addresses", sub: "Manage delivery locations", icon: location, onClick: () => setActiveTab("address") },
+                { label: "Payment Methods", sub: "UPI, Cash & more", icon: appointment, onClick: () => setActiveTab("payment") },
               ].map((item, i) => (
                 <button key={i}
-                  onClick={() => item.to ? navigate(item.to) : null}
-                  className="w-full bg-white border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md hover:border-purple-200 transition">
+                  onClick={item.onClick}
+                  className="w-full bg-white border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md hover:border-amber-300 transition">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
                       <img src={item.icon} alt="" className="w-5 h-5" />
                     </div>
                     <div className="text-left">
@@ -477,7 +589,7 @@ const Profile = () => {
                 </button>
               ))}
               <button onClick={handleLogout}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold transition shadow-lg shadow-purple-100">
+                className="w-full bg-[#6f4e37] hover:bg-[#5a3d2b] text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold transition shadow-lg">
                 <img src={logout} alt="" className="w-5 h-5 invert" />
                 LOGOUT SECURELY
               </button>

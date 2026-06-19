@@ -1,7 +1,8 @@
-import heroImage from "../assets/p1.avif";
+ import heroImage from "../assets/p1.avif";
 import arrowIcon from "../assets/right-arrow (1).png";
 import starIcon from "../assets/star.png";
 import Navbar from "../component/Navbar";
+import heart from "../assets/heart (1).png";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import k1 from "../assets/k1.webp";
@@ -24,6 +25,7 @@ import u3 from "../assets/u3.avif";
 import truckIcon from "../assets/cargo-truck.png";
 import verifiedIcon from "../assets/verified.png";
 import musicIcon from "../assets/musical-note.png";
+import shoppingCartIcon from "../assets/shopping-cart.png";
 import Footer from "../component/Footer";
 import cartIcon from "../assets/shopping-cart.png";
 import viewArrow from "../assets/right-arrow (1).png";
@@ -32,6 +34,9 @@ const Home = () => {
   const [activeReview, setActiveReview] = useState(3);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [wishlist, setWishlist] = useState(() => {
+    return JSON.parse(localStorage.getItem("wishlist")) || [];
+  });
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -171,13 +176,13 @@ if (displayNewArrivals.length < 3) {
       <div className="max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="bg-blue-100 text-blue-600 text-xs font-semibold px-4 py-2 rounded-full">
+            <span className="bg-blue-100 text-black text-xs font-semibold px-4 py-2 rounded-full">
               SPRING COLLECTION 2024
             </span>
             <h1 className="mt-6 text-5xl lg:text-7xl font-bold leading-tight">
               Refine Your
               <br />
-              <span className="text-blue-600 italic">
+              <span className="text-[#6f4e37] italic">
                 Aesthetic
               </span>
               <br />
@@ -189,8 +194,8 @@ if (displayNewArrivals.length < 3) {
               design at your fingertips.
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
-              <button onClick={() => (window.location.href = "/product")}
-                className="bg-blue-600 text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700">
+              <button onClick={() => (window.location.href = "/categories")}
+                className="bg-[#6f4e37] text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700">
                 Shop Now
                 <img src={arrowIcon} alt="" className="w-4 h-4 invert" />
               </button>
@@ -278,8 +283,7 @@ if (displayNewArrivals.length < 3) {
                 localStorage.setItem("cart", JSON.stringify(cart));
                 window.location.href = "/cart";
               }}
-              className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition"
-            >
+              className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition">
               <img src={cartIcon} alt="" className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -308,7 +312,7 @@ if (displayNewArrivals.length < 3) {
     </div>
   </div>
 </section>
-<section className="py-20 bg-gradient-to-r from-[#e9e9ef] to-[#c7b8ff]">
+<section className="py-20 bg-gradient-to-r from-[#e9e9ef] to-[#ffe9b8]">
   <div className="max-w-7xl mx-auto px-6">
     <div className="text-center mb-12">
       <h2 className="text-4xl font-bold text-gray-900">
@@ -321,14 +325,43 @@ if (displayNewArrivals.length < 3) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {displayFeatured.map((product) => (
         <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
-          <div className="relative">
-            <img src={product.image} alt="" className="w-full h-64 object-cover" />
-            {product.discount && (
-              <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                {product.discount}
-              </span>
-            )}
-          </div>
+        <div className="relative">
+  <img src={product.image}  alt=""
+    className="w-full h-64 object-cover"/>
+  {product.discount && (
+    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
+      {product.discount}
+    </span>
+  )}
+  <button  onClick={(e) => {   e.stopPropagation();
+      const currentWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+      const exists = currentWishlist.some((w) => w.image === product.image);
+      let updated;
+      if (exists) {
+        updated = currentWishlist.filter((w) => w.image !== product.image);
+      } else {
+        updated = [...currentWishlist, {
+          id: Date.now(),
+          image: product.image,
+          name: product.title,
+          category: product.category,
+          price: product.price,
+        }];
+      }
+      localStorage.setItem("wishlist", JSON.stringify(updated));
+      setWishlist(updated);
+      window.dispatchEvent(new Event("wishlistUpdated"));
+    }}
+    className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md hover:scale-110 transition-all duration-300" >
+    <svg className="w-5 h-5"
+      fill={wishlist.some((w) => w.image === product.image) ? "#e11d48" : "none"}
+      stroke={wishlist.some((w) => w.image === product.image) ? "#e11d48" : "#6b7280"}
+      strokeWidth="2"
+      viewBox="0 0 24 24"  >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  </button>
+</div>
           <div className="p-4">
             <p className="text-xs uppercase text-gray-400 mb-2">{product.category}</p>
             <h3 className="font-semibold text-lg text-gray-900">{product.title}</h3>
@@ -355,7 +388,7 @@ if (displayNewArrivals.length < 3) {
                   localStorage.setItem("cart", JSON.stringify(cart));
                   window.location.href = "/cart";
                 }}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                className="bg-[#6f4e37] hover:bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2">
                 <img src={cartIcon} alt="" className="w-4 h-4 invert" />
                 Add to Cart
               </button>
@@ -398,22 +431,27 @@ if (displayNewArrivals.length < 3) {
             <p className="text-blue-600 font-bold mt-1">
               {item.price}
             </p>
-            <button
-              onClick={() => {
-                const cart = JSON.parse(localStorage.getItem("cart")) || [];
-                cart.push({
-                  img: item.image,
-                  tag: "New Arrivals",
-                  title: item.title,
-                  price: item.price,
-                });
-                localStorage.setItem("cart", JSON.stringify(cart));
-                window.location.href = "/cart";
-              }}
-              className="mt-2 flex items-center gap-2 text-sm text-gray-500 hover:text-black" >
-              Add to Cart
-              <img src={addIcon} alt="" className="w-4 h-4" />
-            </button>
+         <button
+  onClick={() => {
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    cart.push({
+      img: item.image,
+      tag: "New Arrivals",
+      title: item.title,
+      price: item.price,
+    });
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    window.location.href = "/cart";
+  }}
+  className="mt-3 w-full min-w-[170px] bg-[#8B6B4A] hover:bg-[#73563A] text-white py-3 px-4 rounded-md flex items-center justify-center gap-3 whitespace-nowrap transition-all duration-300"
+>
+  <img src={shoppingCartIcon} alt="Cart" className="w-5 h-5 flex-shrink-0"/>
+  <span className="text-base font-medium">
+    Add to Cart
+  </span>
+</button>
           </div>
         </div>
       ))}
@@ -432,7 +470,7 @@ if (displayNewArrivals.length < 3) {
          <div key={item.id} onClick={() => setActiveReview(item.id)}
   className={`rounded-2xl p-8 border cursor-pointer transition-all duration-300 ${
     activeReview === item.id
-      ? "bg-yellow-300 border-yellow-300"
+      ? "bg-[#ccb09b] border-black-300"
       : "bg-white hover:shadow-lg" }`}>
             <div className="flex gap-1 mb-5">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -460,7 +498,7 @@ if (displayNewArrivals.length < 3) {
     </div>
     <div className="border-t mt-20 pt-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-        <div className="flex items-center gap-4">
+        <div onClick={() => (window.location.href = "/checkout")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
           <img src={truckIcon} alt="" className="w-8 h-8" />
           <div>
             <h4 className="font-semibold">
@@ -471,7 +509,7 @@ if (displayNewArrivals.length < 3) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div onClick={() => (window.location.href = "/checkout")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
           <img src={verifiedIcon} alt="" className="w-8 h-8" />
           <div>
             <h4 className="font-semibold">
@@ -482,7 +520,7 @@ if (displayNewArrivals.length < 3) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div onClick={() => (window.location.href = "/services")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
           <img src={starIcon} alt="" className="w-8 h-8" />
           <div>
             <h4 className="font-semibold">
@@ -493,7 +531,7 @@ if (displayNewArrivals.length < 3) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div onClick={() => (window.location.href = "/contact")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
           <img src={musicIcon} alt="" className="w-8 h-8" />
           <div>
             <h4 className="font-semibold">

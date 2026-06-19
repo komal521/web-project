@@ -10,7 +10,7 @@ import appleIcon from "../assets/mobile-phone.png";
 import facebookIcon from "../assets/facebook.png";
 import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 const Registration = () => {
    const [formData, setFormData] = useState({
   fullName: "",
@@ -167,7 +167,7 @@ const navigate = useNavigate();
           </label>
         </div>
        <button  type="button"  onClick={handleSubmit}
-  className="w-full mt-8 h-14 rounded-full bg-gradient-to-r from-[#d7c2ff] to-[#a56eff] text-white font-semibold flex items-center justify-center gap-3 hover:opacity-95 transition">
+  className="w-full mt-8 h-14 rounded-full bg-[#6f4e37] text-white font-semibold flex items-center justify-center gap-3 hover:opacity-95 transition">
   Create My Premium Account
   <img src={arrowIcon} alt="" className="w-5 h-5" />
        </button>
@@ -194,9 +194,9 @@ const navigate = useNavigate();
         </div>
         <p className="text-center text-sm mt-6 text-gray-600">
           Already a member?
-          <span className="font-semibold ml-1 cursor-pointer text-black">
+          <Link to="/login" className="font-semibold ml-1 cursor-pointer text-black hover:text-[#6f4e37] transition">
             Sign In
-          </span>
+          </Link>
         </p>
       </div>
     </div>

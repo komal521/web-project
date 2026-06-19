@@ -45,7 +45,6 @@ function createConnection() {
     }
   });
 }
-
 function scheduleReconnect() {
   retryTimer = setTimeout(() => {
     createConnection();

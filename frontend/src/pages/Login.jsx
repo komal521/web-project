@@ -1,4 +1,4 @@
-import { useState } from "react";
+  import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import gmailIcon from "../assets/gmail.png";
 import lockIcon from "../assets/lock.png";
@@ -39,15 +39,15 @@ const Login = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f0ff] via-[#faf8f4] to-[#f0f4ff] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f0ff] via-[#faf8f4] to-[#f0f4ff] flex flex-col items-center justify-center px-4 py-10 gap-0">
       <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-xl border border-gray-100">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-purple-100 rounded-2xl mb-4">
-            <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-100 rounded-2xl mb-4">
+            <svg className="w-7 h-7 text-[#6f4e37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <h2 className="text-3xl font-bold text-purple-600 tracking-tight">Lumina</h2>
+          <h2 className="text-3xl font-bold text-[#6f4e37] tracking-tight">Lumina</h2>
           <h3 className="text-2xl font-bold mt-3 text-gray-900">Welcome Back</h3>
           <p className="text-gray-500 mt-1 text-sm">Sign in to access your account</p>
         </div>
@@ -61,7 +61,7 @@ const Login = () => {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
               Email Address
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-purple-400 focus-within:bg-white transition">
+            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-amber-400 focus-within:bg-white transition">
               <img src={gmailIcon} alt="" className="w-5 h-5 mr-3 opacity-60" />
               <input type="email" placeholder="name@example.com"
                 className="w-full outline-none bg-transparent text-gray-800 text-sm"
@@ -72,7 +72,7 @@ const Login = () => {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
               Password
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-purple-400 focus-within:bg-white transition">
+            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-amber-400 focus-within:bg-white transition">
               <img src={lockIcon} alt="" className="w-5 h-5 mr-3 opacity-60" />
               <input type={showPass ? "text" : "password"}
                 placeholder="••••••••"
@@ -87,15 +87,15 @@ const Login = () => {
           </div>
           <div className="flex justify-between items-center text-sm">
             <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 accent-purple-600" />
+            <input type="checkbox" className="w-4 h-4 accent-[#6f4e37]" />
               Remember me
             </label>
-            <button type="button" className="text-purple-600 font-semibold hover:text-purple-800 transition">
+            <button type="button" className="text-[#6f4e37] font-semibold hover:text-[#5a3d2b] transition">
               Forgot Password?
             </button>
           </div>
           <button type="submit" disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-purple-100 transition" >
+            className="w-full bg-[#6f4e37] hover:bg-[#5a3d2b] disabled:opacity-60 text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-amber-100 transition" >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
@@ -118,11 +118,22 @@ const Login = () => {
           </button>
           <div className="text-center text-sm text-gray-500 mt-4">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-purple-600 font-bold hover:text-purple-800 transition">
-              Sign Up
+            <Link to="/signup" className="text-[#6f4e37] font-bold hover:text-[#5a3d2b] transition">
+              Create Account
             </Link>
           </div>
         </form>
+      </div>
+      <div className="mt-4 bg-white w-full max-w-md px-8 py-5 rounded-2xl shadow border border-gray-100 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">New to Lumina?</p>
+          <p className="text-xs text-gray-500 mt-0.5">Create a free account and start shopping</p>
+        </div>
+        <Link
+          to="/signup"
+          className="bg-[#6f4e37] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition shadow-md" >
+          Sign Up Free 
+        </Link>
       </div>
     </div>
   );

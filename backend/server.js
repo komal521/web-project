@@ -249,7 +249,6 @@ app.post("/api/categories", upload.single("image"), (req, res) => {
     }
   );
 });
-
 app.get("/api/categories", (req, res) => {
   const sql = "SELECT * FROM categories ORDER BY id DESC";
   db.query(sql, (err, results) => {
@@ -260,7 +259,6 @@ app.get("/api/categories", (req, res) => {
     res.status(200).json({ success: true, categories: results });
   });
 });
-
 app.delete("/api/categories/:id", (req, res) => {
   const { id } = req.params;
   const sql = "DELETE FROM categories WHERE id = ?";
@@ -456,13 +454,13 @@ app.patch("/api/enquiries/:id/status", (req, res) => {
   });
 });
 app.post("/api/orders", (req, res) => {
-  const { customer_name, email, phone, address, total_amount, items } = req.body;
+  const { customer_name, email, phone, address, total_amount, items, payment_method } = req.body;
   if (!customer_name || !email || !total_amount) {
     return res.status(400).json({ success: false, message: "Missing required fields" });}
   const sql = `
-    INSERT INTO orders (customer_name, email, phone, address, items, total_amount)
-    VALUES (?, ?, ?, ?, ?, ?) `;
-  db.query(sql, [customer_name, email, phone, address, items || "", total_amount], (err, result) => {
+    INSERT INTO orders (customer_name, email, phone, address, items, total_amount, payment_method)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  db.query(sql, [customer_name, email, phone, address, items || "", total_amount, payment_method || "unknown"], (err, result) => {
     if (err) {
       console.log("Order insert error:", err);
       return res.status(500).json({ success: false, message: "Failed to place order" });
@@ -496,6 +494,40 @@ app.get("/api/order/cards", (req, res) => {
     res.status(200).json(data);
   });
 });
+app.get("/api/report/recent", (req, res) => {
+  const sql = `
+    SELECT 
+      id,
+      customer_name,
+      total_amount,
+      status,
+      created_at,
+      payment_method,
+      items
+    FROM orders
+    ORDER BY id DESC
+    LIMIT 5
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("Recent report fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to fetch recent reports" });
+    }
+
+    const data = (results || []).map((o) => ({
+      id: `#REP-${o.id}`,
+      customer: o.customer_name,
+      revenue: `₹${Number(o.total_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+      status: o.status || "Pending",
+      date: o.created_at ? new Date(o.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" }) : "",
+      payment_method: o.payment_method || "unknown",
+      items: o.items || ""
+    }));
+
+    res.json({ success: true, recentReports: data });
+  });
+});
+
 app.get("/api/report/cards", (req, res) => {
   const data = { totalRevenue: "₹0", totalOrders: 0, activeUsers: 0, monthlyGrowth: "0%" };
   db.query("SELECT SUM(total_amount) as sum FROM orders", (err, result) => {
@@ -720,6 +752,106 @@ app.get("/api/dashboard/cards", (req, res) => {
         });
       });
     });
+  });
+});
+app.post("/api/wishlist", (req, res) => {
+  const { userId, productId } = req.body;
+  if (!userId || !productId) {
+    return res.status(400).json({ success: false, message: "userId and productId required" });
+  }
+  db.query("SELECT * FROM wishlists WHERE user_id = ? AND product_id = ?", [userId, productId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: "Error checking wishlist" });
+    if (results && results.length > 0) {
+      db.query("DELETE FROM wishlists WHERE user_id = ? AND product_id = ?", [userId, productId], (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: "Error removing" });
+        res.json({ success: true, message: "Removed from wishlist", action: "removed" });
+      });
+    } else {
+      db.query("INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)", [userId, productId], (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: "Error adding" });
+        res.json({ success: true, message: "Added to wishlist", action: "added" });
+      });
+    }
+  });
+});
+app.get("/api/wishlist/:userId", (req, res) => {
+  const { userId } = req.params;
+  const sql = `
+    SELECT w.id as wishlist_id, w.product_id, w.created_at as wishlisted_at,
+           p.product_name, p.base_price, p.discount_price, p.image, p.category, p.brand, p.stock_quantity
+    FROM wishlists w
+    JOIN products p ON w.product_id = p.id
+    WHERE w.user_id = ?
+    ORDER BY w.created_at DESC`;
+  db.query(sql, [userId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: "Error fetching wishlist" });
+    res.json({ success: true, wishlist: results || [] });
+  });
+});
+app.delete("/api/wishlist/:userId/:productId", (req, res) => {
+  const { userId, productId } = req.params;
+  db.query("DELETE FROM wishlists WHERE user_id = ? AND product_id = ?", [userId, productId], (err) => {
+    if (err) return res.status(500).json({ success: false, message: "Delete failed" });
+    res.json({ success: true, message: "Removed from wishlist" });
+  });
+});
+app.post("/api/share-email", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+  try {
+    const nodemailer = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER || "test@gmail.com",
+        pass: process.env.EMAIL_PASS || "testpassword",
+      },
+    });
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER || "noreply@lumina.com",
+      to: email,
+      subject: "Check out Lumina - Premium Shopping Experience",
+      html: `<div style="font-family:Arial;max-width:600px;margin:0 auto;padding:20px;"><h1 style="color:#7c3aed;text-align:center;">Welcome to Lumina</h1><p style="color:#555;font-size:16px;">Discover curated selections from the world's most innovative brands. Premium quality, sustainable materials and timeless design.</p><div style="text-align:center;margin:30px 0;"><a href="http://localhost:5173/home" style="background:#7c3aed;color:white;padding:12px 30px;border-radius:25px;text-decoration:none;font-weight:bold;">Shop Now</a></div></div>`,
+    });
+    res.json({ success: true, message: "Email sent successfully!" });
+  } catch (error) {
+    console.log("Email error:", error.message);
+    res.json({ success: true, message: "Email shared! (Demo mode)" });
+  }
+});
+app.get("/api/performance", (req, res) => {
+  const data = { monthlyTarget: 0, completedPercentage: 0, totalRevenue: 0, monthlyOrders: 0 };
+  db.query("SELECT COUNT(*) as total, SUM(CASE WHEN status='Completed' THEN 1 ELSE 0 END) as completed FROM orders", (err, result) => {
+    if (!err && result[0]) {
+      data.monthlyOrders = result[0].total;
+      data.completedPercentage = result[0].total > 0 ? Math.round((result[0].completed / result[0].total) * 100) : 0;
+      data.monthlyTarget = data.completedPercentage;
+    }
+    db.query("SELECT SUM(total_amount) as sum FROM orders", (err2, result2) => {
+      if (!err2 && result2[0]) data.totalRevenue = result2[0].sum || 0;
+      res.json(data);
+    });
+  });
+});
+app.get("/api/search", (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json({ success: true, products: [], categories: [] });
+  const searchTerm = "%" + q + "%";
+  db.query("SELECT * FROM products WHERE product_name LIKE ? OR category LIKE ? OR brand LIKE ? OR description LIKE ? LIMIT 20", [searchTerm, searchTerm, searchTerm, searchTerm], (err, products) => {
+    if (err) return res.status(500).json({ success: false, message: "Search failed" });
+    db.query("SELECT * FROM categories WHERE category_name LIKE ? LIMIT 10", [searchTerm], (err2, categories) => {
+      if (err2) return res.json({ success: true, products: products || [], categories: [] });
+      res.json({ success: true, products: products || [], categories: categories || [] });
+    });
+  });
+});
+app.get("/api/revenue-graph", (req, res) => {
+  const sql = `SELECT MONTH(created_at) as month, SUM(total_amount) as revenue FROM orders WHERE YEAR(created_at) = YEAR(CURDATE()) GROUP BY MONTH(created_at) ORDER BY month`;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: "Revenue graph failed" });
+    const months = Array(12).fill(0);
+    (results || []).forEach(r => { months[r.month - 1] = Number(r.revenue) || 0; });
+    res.json({ success: true, data: months });
   });
 });
 app.listen(PORT, () => {

@@ -9,10 +9,28 @@ import sunIcon from "../assets/sun.png";
 import moonIcon from "../assets/moon.png";
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark" || document.documentElement.classList.contains("dark");
   });
   const location = useLocation();
+  const fetchWishlistCount = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) { setWishlistCount(0); return; }
+    try {
+      const res = await fetch(`http://localhost:5000/api/wishlist/${user.id}`);
+      const data = await res.json();
+      if (data.success) setWishlistCount(data.wishlist?.length || 0);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    fetchWishlistCount();
+    window.addEventListener("wishlistUpdated", fetchWishlistCount);
+    return () => window.removeEventListener("wishlistUpdated", fetchWishlistCount);
+  }, []);
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -24,8 +42,8 @@ const Navbar = () => {
   }, [darkMode]);
   const navLink = (path) =>
     location.pathname === path
-      ? "text-purple-600 font-semibold border-b-2 border-purple-600 pb-0.5"
-      : `hover:text-purple-600 transition-colors duration-200 ${darkMode ? "text-gray-300" : "text-gray-600"}`;
+      ? "text-[#6f4e37] font-semibold border-b-2 border-[#6f4e37] pb-0.5"
+      : `hover:text-[#6f4e37] transition-colors duration-200 ${darkMode ? "text-gray-300" : "text-gray-600"}`;
   return (
     <header className={`sticky top-0 z-50 border-b shadow-sm transition-colors duration-300 ${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"}`}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -60,19 +78,26 @@ const Navbar = () => {
                 <img src={moonIcon} alt="dark" className="w-4 h-4 object-contain" />
               </button>
             </div>
-            <img src={heartIcon} alt="" className={`w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:scale-110 transition-transform ${darkMode ? "invert" : ""}`} />
+            <Link to="/wishlist" className="relative cursor-pointer flex items-center gap-1">
+              <img src={heartIcon} alt="" className={`w-5 h-5 md:w-6 md:h-6 hover:scale-110 transition-transform ${darkMode ? "invert" : ""}`} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -left-2 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <Link to="/cart" className="relative cursor-pointer flex items-center gap-1">
               <img src={cartIcon} alt="" className={`w-5 h-5 md:w-6 md:h-6 hover:scale-110 transition-transform ${darkMode ? "invert" : ""}`} />
               <span className={`hidden sm:inline font-semibold text-sm ${darkMode ? "text-gray-200" : "text-gray-700"}`}>Cart</span>
-              <span className="absolute -top-2 -left-2 bg-purple-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-2 -left-2 bg-[#6f4e37] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                 {JSON.parse(localStorage.getItem("cart"))?.length || 0}
               </span>
             </Link>
             <Link to="/login"
               className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                 location.pathname === "/login"
-                  ? "bg-purple-800 text-white"
-                  : "bg-purple-600 text-white hover:bg-purple-700"}`}>
+                  ? "bg-[#5a3d2b] text-white"
+                  : "bg-[#6f4e37] text-white hover:bg-[#5a3d2b]"}`}>
               <img src={userIcon} alt="" className="w-4 h-4 invert" />
               Login
             </Link>
@@ -80,8 +105,8 @@ const Navbar = () => {
               <Link  to="/profile"
                 className={`block px-4 py-2 rounded-full text-sm transition-all duration-200 ${
                   location.pathname === "/profile"
-                    ? "bg-purple-600 text-white border border-purple-600"
-                    : "border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white" }`} >
+                    ? "bg-[#6f4e37] text-white border border-[#6f4e37]"
+                    : "border border-[#6f4e37] text-[#6f4e37] hover:bg-[#6f4e37] hover:text-white" }`} >
                 Profile
               </Link>
               <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
@@ -90,7 +115,7 @@ const Navbar = () => {
                   <p className={`text-xs truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{JSON.parse(localStorage.getItem("user"))?.email || "Guest"}</p>
                 </div>
                 <div className="p-2">
-                  <Link to="/profile" className={`block px-4 py-2 text-sm rounded-lg ${darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-purple-50"}`}>View Profile</Link>
+                  <Link to="/profile" className={`block px-4 py-2 text-sm rounded-lg ${darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-amber-50"}`}>View Profile</Link>
                   <button onClick={() => { localStorage.removeItem("user"); window.location.href="/login"; }} className={`w-full text-left block px-4 py-2 text-sm rounded-lg ${darkMode ? "text-red-400 hover:bg-gray-700" : "text-red-600 hover:bg-red-50"}`}>Logout</button>
                 </div>
               </div>
@@ -122,16 +147,15 @@ const Navbar = () => {
                 onClick={() => setMenuOpen(false)}
                 className={`px-4 py-2 rounded-lg text-center text-sm font-semibold ${
                   location.pathname === "/login"
-                    ? "bg-purple-800 text-white"
-                    : "bg-purple-600 text-white"
-                }`} >
+                    ? "bg-[#5a3d2b] text-white"
+                    : "bg-[#6f4e37] text-white" }`} >
                 Login
               </Link>
               <Link to="/profile" onClick={() => setMenuOpen(false)}
-                className={`px-4 py-2 rounded-lg text-center text-sm font-semibold border border-purple-600 ${
+                className={`px-4 py-2 rounded-lg text-center text-sm font-semibold border border-[#6f4e37] ${
                   location.pathname === "/profile"
-                    ? "bg-purple-600 text-white"
-                    : "text-purple-600"  }`} >
+                    ? "bg-[#6f4e37] text-white"
+                    : "text-[#6f4e37]"  }`} >
                 Profile
               </Link>
             </div>

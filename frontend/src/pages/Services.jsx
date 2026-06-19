@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import heart from "../assets/heart (1).png";
 import b1 from "../assets/b1.webp";
 import b3 from "../assets/b3.webp";
 import b5 from "../assets/b5.webp";
@@ -20,6 +21,14 @@ import Footer from "../component/Footer";
 const Services = () => {
   const navigate = useNavigate();
 const [services, setServices] = useState([]);
+const [wishlistedIds, setWishlistedIds] = useState(() => {
+  const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+  const ids = {};
+  wishlist.forEach((item) => {
+    if (item && item.id) ids[item.id] = true;
+  });
+  return ids;
+});
 useEffect(() => {
   fetch("http://localhost:5000/api/products")
     .then((res) => res.json())
@@ -32,6 +41,53 @@ useEffect(() => {
     })
     .catch((err) => console.log(err));
 }, []);
+const handleWishlist = (e, item) => {
+  e.stopPropagation();
+
+  const wishlist =
+    JSON.parse(localStorage.getItem("wishlist")) || [];
+
+  const exists = wishlist.find(
+    (p) => p.id === item.id
+  );
+
+  if (exists) {
+    const updatedWishlist = wishlist.filter(
+      (p) => p.id !== item.id
+    );
+
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify(updatedWishlist)
+    );
+    setWishlistedIds((prev) => ({
+      ...prev,
+      [item.id]: false,
+    }));
+  } else {
+    const newItem = {
+      id: item.id,
+      image: `http://localhost:5000/uploads/${item.image}`,
+      name: item.product_name,
+      category: "Service",
+      price: `₹${item.base_price}`,
+    };
+
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify([...wishlist, newItem])
+    );
+
+    setWishlistedIds((prev) => ({
+      ...prev,
+      [item.id]: true,
+    }));
+  }
+
+  window.dispatchEvent(
+    new Event("wishlistUpdated")
+  );
+};
   return (
     <>
       <Navbar />
@@ -39,7 +95,7 @@ useEffect(() => {
         <div className="max-w-7xl mx-auto px-4 py-14">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold">
-              Our <span className="text-purple-600 italic">Spiritual Services</span>
+              Our <span className="text-[#6f4e37] italic">Spiritual Services</span>
             </h1>
             <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
               Experience divine blessings through our trusted puja and
@@ -65,10 +121,24 @@ useEffect(() => {
   <div  key={index}  onClick={() => navigate("/product")}
     className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
   >
-<img
-  src={`http://localhost:5000/uploads/${item.image}`}
-  alt={item.product_name}
-  className="w-full h-52 sm:h-56 md:h-60 object-cover"/>
+<div className="relative">
+  <img
+    src={`http://localhost:5000/uploads/${item.image}`}
+    alt={item.product_name}
+    className="w-full h-52 sm:h-56 md:h-60 object-cover" />
+<button
+  onClick={(e) => handleWishlist(e, item)}
+  className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md hover:scale-110 transition z-10">
+  <svg
+    className="w-5 h-5"
+    fill={wishlistedIds[item.id] ? "#e11d48" : "none"}
+    stroke={wishlistedIds[item.id] ? "#e11d48" : "#6b7280"}
+    strokeWidth="2"
+    viewBox="0 0 24 24" >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+  </svg>
+</button>
+</div>
     <div className="p-5 flex flex-col flex-1">
       <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((s) => (
@@ -80,18 +150,17 @@ useEffect(() => {
       <p className="text-gray-500 text-sm leading-6 mt-2 flex-1">
        {item.description}
       </p>
-      <p className="text-purple-600 font-bold text-xl mt-4">
+      <p className="text-[#6f4e37] font-bold text-xl mt-4">
      ₹{item.base_price}
       </p>
-      <button 
-        onClick={(e) => {
+      <button   onClick={(e) => {
           e.stopPropagation();
           const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
           cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.product_name, price: `₹${item.base_price}`, tag: "Service" });
           localStorage.setItem("cart", JSON.stringify(cartItems));
           navigate("/cart");
         }}
-        className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
+        className="mt-4 w-full bg-[#6f4e37] hover:bg-[#5a3d2b] text-white py-3 rounded-full flex items-center justify-center gap-2 transition">
         <span>Add to Cart</span>
         <img src={cart} alt="Cart" className="w-5 h-5 brightness-0 invert" />
       </button>
@@ -100,7 +169,7 @@ useEffect(() => {
 ))}
           </div>
           <div className="flex justify-center mt-10">
-            <button className="border border-purple-300 text-purple-600 px-6 py-3 rounded-full flex items-center gap-2">
+            <button className="border border-amber-300 text-[#6f4e37] px-6 py-3 rounded-full flex items-center gap-2 hover:bg-amber-50">
               Explore More Services
               <img src={arrow} alt=""  className="w-4 h-4"/>
             </button>

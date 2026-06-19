@@ -101,27 +101,127 @@ const voiceMore = [
       "Incredible experience from browsing to delivery. The product quality matched every single description perfectly.",
   },
 ];
-
 const features = [
   { icon: truck,    title: "Fast Delivery",    desc: "Free shipping all over India" },
   { icon: verified, title: "Secure Checkout",  desc: "100% secure payments" },
   { icon: returns,  title: "Easy Returns",     desc: "7 Days Return Policy" },
   { icon: premium,  title: "Premium Quality",  desc: "Certified Products" },
 ];
-const ProductCard = ({ img, tag, title, price, oldPrice, rating, showButton = false }) => {
-  const navigate = useNavigate();
-  const addToCart = () => {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart.push({ img, tag, title, price });
-    localStorage.setItem("cart", JSON.stringify(cart));
-    navigate("/cart");
+
+const HeartIcon = ({ filled, onClick }) => (
+  <button
+    onClick={onClick}
+    className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
+    aria-label={filled ? "Remove from wishlist" : "Add to wishlist"} >
+    <svg className="w-5 h-5" fill={filled ? "#e11d48" : "none"}
+      stroke={filled ? "#e11d48" : "#6b7280"}
+      viewBox="0 0 24 24" >
+      <path strokeLinecap="round" strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  </button>
+);
+const TimelessHeart = ({ item }) => {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  useEffect(() => {
+    const syncWishlist = () => {
+      const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+      const exists = wishlist.some((w) => w.image === item.img);
+      setIsWishlisted(exists);
+    };
+    syncWishlist();
+    window.addEventListener("wishlistUpdated", syncWishlist);
+    return () => window.removeEventListener("wishlistUpdated", syncWishlist);
+  }, [item.img]);
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    const exists = wishlist.some((w) => w.image === item.img);
+    if (exists) {
+      wishlist = wishlist.filter((w) => w.image !== item.img);
+      setIsWishlisted(false);
+    } else {
+      wishlist.push({
+        id: Date.now(),
+        image: item.img,
+        name: item.title,
+        category: item.tag,
+        price: item.price
+      });
+      setIsWishlisted(true);
+    }
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    window.dispatchEvent(new Event("wishlistUpdated"));
   };
   return (
-    <div className="bg-white rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full">
+    <button onClick={handleToggle}
+      className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
+      aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"} >
+      <svg className="w-4 h-4" fill={isWishlisted ? "#e11d48" : "none"}
+        stroke={isWishlisted ? "#e11d48" : "#6b7280"} strokeWidth="2"
+        viewBox="0 0 24 24"  >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    </button>
+  );
+};
+const ProductCard = ({ id, img, tag, title, price, oldPrice, rating, showButton = false }) => {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+useEffect(() => {
+  const syncWishlist = () => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    const exists = wishlist.find((item) => item.id === id);
+    setIsWishlisted(!!exists);
+  };
+  syncWishlist();
+  window.addEventListener("wishlistUpdated", syncWishlist);
+  return () => {
+    window.removeEventListener("wishlistUpdated", syncWishlist);
+  };
+}, [id]);
+
+  const navigate = useNavigate();
+const handleWishlist = (e) => {
+  e.stopPropagation();
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    alert("Please login to use wishlist");
+    navigate("/login");
+    return;
+  }
+  let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+  const exists = wishlist.find((item) => item.id === id);
+  if (exists) {
+    wishlist = wishlist.filter((item) => item.id !== id);
+    setIsWishlisted(false);
+  } else {
+    wishlist.push({
+      id,
+      image: img,
+      name: title,
+      category: tag,
+      price
+    });
+    setIsWishlisted(true);
+  }
+  localStorage.setItem("wishlist", JSON.stringify(wishlist));
+  window.dispatchEvent(new Event("wishlistUpdated"));
+};
+const getWishlist = () => {
+  return JSON.parse(localStorage.getItem("wishlist")) || [];
+};
+  return (
+    <div className="bg-white rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative">
       <div className="relative overflow-hidden">
+        <HeartIcon filled={isWishlisted} onClick={handleWishlist} />
         <img src={img} alt={title}
           className="w-full h-[240px] sm:h-[260px] object-cover group-hover:scale-105 transition duration-500"/>
-        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow">
+        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
           {tag}
         </span>
       </div>
@@ -129,7 +229,7 @@ const ProductCard = ({ img, tag, title, price, oldPrice, rating, showButton = fa
         <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
         <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-purple-600 font-bold text-base">{price}</span>
+            <span className="text-[#6f4e37] font-bold text-base">{price}</span>
             {oldPrice && (
               <span className="text-gray-400 line-through text-xs">{oldPrice}</span> )}
           </div>
@@ -139,7 +239,13 @@ const ProductCard = ({ img, tag, title, price, oldPrice, rating, showButton = fa
           </div>
         </div>
         {showButton && (
-          <button onClick={(e) => { e.stopPropagation(); addToCart(); }} className="mt-3 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-full text-sm font-semibold hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2">
+          <button onClick={(e) => {
+  e.stopPropagation();
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  cart.push({ img, title, tag, price });
+  localStorage.setItem("cart", JSON.stringify(cart));
+  window.location.href = "/cart";
+}} className="mt-3 w-full bg-[#6f4e37] text-white py-2 rounded-full text-sm font-semibold hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2">
             <img src={cart} alt="Cart" className="w-4 h-4 brightness-0 invert" />
             Add to Cart
           </button>
@@ -152,11 +258,11 @@ const SectionHeader = ({ title, highlight, subtitle, btnLabel = "View All Collec
   <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
     <div>
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-        {title} <span className="text-purple-600">{highlight}</span>
+        {title} <span className="text-[#6f4e37]">{highlight}</span>
       </h2>
       <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
     </div>
-    <button className="hidden sm:flex items-center gap-2 border border-purple-300 text-purple-600 px-5 py-2 rounded-full hover:bg-purple-50 transition text-sm font-medium">
+    <button className="hidden sm:flex items-center gap-2 border border-black text-[#6f4e37] px-5 py-2 rounded-full hover:bg-amber-50 transition text-sm font-medium">
       {btnLabel}
       <img src={arrow} alt="" className="w-4 h-4" />
     </button>
@@ -165,8 +271,10 @@ const SectionHeader = ({ title, highlight, subtitle, btnLabel = "View All Collec
 const ProductPage = () => {
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [activeReview, setActiveReview] = useState(0);
   const [products, setProducts] = useState([]);
   const [dynamicTimeless, setDynamicTimeless] = useState([]);
+  const [isMainWishlisted, setIsMainWishlisted] = useState(false);
   useEffect(() => {
   fetch("http://localhost:5000/api/products")
     .then((res) => res.json())
@@ -182,7 +290,6 @@ const ProductPage = () => {
           oldPrice: p.discount_price > 0 ? `₹${p.discount_price}` : "",
           rating: "4.9"
         }));
-        
         if (mappedFeatured.length < 4) {
           const filler = timelessProducts.slice(0, 4 - mappedFeatured.length);
           setDynamicTimeless([...mappedFeatured, ...filler]);
@@ -199,17 +306,38 @@ const ProductPage = () => {
       <div className="min-h-screen bg-gradient-to-b from-[#faf8f5] via-white to-[#faf8f5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="w-full">
+            <div className="w-full relative">
+              <HeartIcon 
+                filled={isMainWishlisted} 
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const user = JSON.parse(localStorage.getItem("user"));
+                  if (!user) {
+                    alert("Please login to use wishlist");
+                    navigate("/login");
+                    return;
+                  }
+                  const nextVal = !isMainWishlisted;
+                  setIsMainWishlisted(nextVal);
+                  try {
+                    await fetch("http://localhost:5000/api/wishlist", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: user.id, productId: 1 }) // default/mock product id for main hero banner product
+                    });
+                    window.dispatchEvent(new Event("wishlistUpdated"));
+                  } catch (err) {
+                    console.error(err); }  }}  />
               <img  src={z2}  alt="Product"
                 className="w-full rounded-[30px] shadow-xl object-cover max-h-[480px] lg:max-h-none" />
             </div>
             <div className="w-full">
-              <span className="border border-purple-300 text-purple-600 px-4 py-1 rounded-full text-sm font-medium">
+              <span className="border border-amber-300 text-[#6f4e37] px-4 py-1 rounded-full text-sm font-medium">
                 New Collection 2025
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 leading-tight">
                 Mastery in{" "}
-                <span className="text-purple-600">Motion.</span>
+                <span className="text-[#6f4e37]">Motion.</span>
               </h1>
               <div className="flex items-center gap-1 mt-4 flex-wrap">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -246,7 +374,7 @@ const ProductPage = () => {
                     localStorage.setItem("cart", JSON.stringify(cart));
                     window.location.href = "/cart";
                   }}
-                  className="flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:scale-105 transition-all duration-300">
+                  className="flex items-center justify-center gap-3 bg-[#6f4e37] text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:scale-105 transition-all duration-300">
                   Add To Bag
                   <div className="bg-white/20 p-2 rounded-full">
                     <img src={cart} alt="" className="w-4 h-4 brightness-0 invert" />
@@ -259,7 +387,7 @@ const ProductPage = () => {
                     localStorage.setItem("cart", JSON.stringify(cart));
                     window.location.href = "/cart";
                   }}
-                  className="bg-yellow-400 hover:bg-yellow-500 px-8 py-4 rounded-full font-semibold transition-all">
+                  className="bg-[#0c0c0c] text-white  px-8 py-4 rounded-full font-semibold transition-all">
                   Buy It Now
                 </button>
               </div>
@@ -272,12 +400,12 @@ const ProductPage = () => {
                 onClick={() => setActive(index)}
                 className={`cursor-pointer rounded-3xl p-6 border transition-all duration-300 ${
                   active === index
-                    ? "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 text-white shadow-2xl scale-105 border-transparent"
-                    : "bg-white hover:border-purple-300 hover:shadow-lg"
+                    ? "bg-[#6f4e37] text-white shadow-2xl scale-105 border-transparent"
+                    : "bg-white hover:border-black hover:shadow-lg"
                 }`} >
                 <div
                   className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                    active === index ? "bg-white shadow-md" : "bg-purple-100"
+                    active === index ? "bg-white shadow-md" : "bg-[#6f4e37]"
                   }`} >
                   <img src={item.icon} alt="" className="w-8 h-8 object-contain" />
                 </div>
@@ -298,18 +426,17 @@ const ProductPage = () => {
            {products.map((item) => (
    <ProductCard
      key={item.id}
+     id={item.id}
      img={`http://localhost:5000/uploads/${item.image}`}
      tag={item.category}
      title={item.product_name}
      price={`₹${item.base_price}`}
      oldPrice={`₹${item.discount_price}`}
      rating="4.8"
-     showButton={true}
-   />
-))}
+     showButton={true}  />))}
           </div>
                     <div className="flex justify-center mt-8 sm:hidden">
-            <button className="flex items-center gap-2 border border-purple-300 text-purple-600 px-5 py-2 rounded-full text-sm">
+            <button className="flex items-center gap-2 border border-amber-300 text-[#6f4e37] px-5 py-2 rounded-full text-sm">
               View All Collection
               <img src={arrow} alt="" className="w-4 h-4" />
             </button>
@@ -318,13 +445,13 @@ const ProductPage = () => {
         <div className="bg-gradient-to-b from-[#fdf9f0] to-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex justify-center mb-4">
-              <span className="bg-yellow-400 text-black text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">
+              <span className="bg-[#6f4e37] text-black text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">
                 Best Sellers
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-2">
               Timeless{" "}
-              <span className="text-purple-600 italic">Masterpieces</span>
+              <span className="text-[#6f4e37] italic">Masterpieces</span>
             </h2>
             <p className="text-center text-gray-500 text-sm mb-10">
               Hand-curated selections that define enduring style.
@@ -333,11 +460,12 @@ const ProductPage = () => {
               {(dynamicTimeless.length > 0 ? dynamicTimeless : timelessProducts).map((item, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full" >
+                  className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative" >
                   <div className="relative overflow-hidden">
+                    <TimelessHeart item={item} />
                     <img src={item.img} alt={item.title}
                       className="w-full h-[200px] sm:h-[220px] object-cover group-hover:scale-105 transition duration-500"/>
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow">
+                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
                       {item.tag}
                     </span>
                   </div>
@@ -350,13 +478,13 @@ const ProductPage = () => {
                       <span className="text-gray-400 text-xs ml-1">{item.rating}</span>
                     </div>
                     <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
-                      <span className="text-purple-600 font-bold">{item.price}</span>
+                      <span className="text-[#6f4e37] font-bold">{item.price}</span>
                       {item.oldPrice && (
                         <span className="text-gray-400 line-through text-xs">{item.oldPrice}</span>
                       )}
                     </div>
                     <div className="mt-3 flex items-center gap-2">
-                      <button className="flex-1 border border-purple-300 text-purple-600 py-2 rounded-full text-xs font-semibold hover:bg-purple-50 transition">
+                      <button className="flex-1 border border-black text-[#6f4e37] py-2 rounded-full text-xs font-semibold hover:bg-amber-50 transition">
                         Quick View
                       </button>
                       <button 
@@ -366,7 +494,7 @@ const ProductPage = () => {
                           localStorage.setItem("cart", JSON.stringify(cartItems));
                           window.location.href = "/cart";
                         }}
-                        className="w-10 h-10 border border-purple-300 bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-600 flex items-center justify-center rounded-full transition group-hover:shadow-md">
+                        className="w-10 h-10 border border-black bg-amber-50 hover:bg-[#6f4e37] hover:text-white text-[#6f4e37] flex items-center justify-center rounded-full transition group-hover:shadow-md">
                         <img src={cart} alt="cart" className="w-4 h-4 hover:invert group-hover:brightness-0 transition" />
                       </button>
                     </div>
@@ -381,43 +509,66 @@ const ProductPage = () => {
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 Voices of{" "}
-                <span className="text-yellow-500 italic">Luxury</span>
+                <span className="text-[#6f4e37] italic">Luxury</span>
               </h2>
-              <p className="text-yellow-500 text-sm sm:text-base mt-2">
+              <p className="text-black text-sm sm:text-base mt-2">
                 What our global community says about their AURA experience.
               </p>
             </div>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {voiceMore.map((item, i) => (
-                <div key={i}
-                  className="bg-gray-50 border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300" >
-                  <div className="flex gap-1 mb-3">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <img key={s} src={star1} alt="" className="w-4 h-4 object-contain" /> ))}
-                  </div>
-                  {/* Review */}
-                  <p className="text-gray-600 italic leading-relaxed text-xs">
-                    "{item.review}"
-                  </p>
-                  {/* Profile — no image */}
-                  <div className="mt-5">
-                    <h4 className="font-semibold text-gray-900 text-xs">{item.name}</h4>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">{item.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+  {voiceMore.map((item, i) => (
+    <div
+      key={i}
+      onClick={() => setActiveReview(i)}
+      className={`border rounded-2xl p-5 shadow-sm cursor-pointer transition-all duration-300 ${
+        activeReview === i
+          ? "bg-[#6f4e37]"
+          : "bg-white border-gray-100 hover:shadow-md"
+      }`} >
+      <div className="flex gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <img key={s}  src={star1}  alt=""
+            className="w-4 h-4 object-contain" />
+        ))}
+      </div>
+      <p  className={`italic leading-relaxed text-xs ${
+        activeReview === i
+            ? "text-white"
+            : "text-gray-600"
+        }`} >
+        "{item.review}"
+      </p>
+      <div className="mt-5">
+        <h4 className={`font-semibold text-xs ${
+            activeReview === i
+              ? "text-white"
+              : "text-gray-900"
+          }`}  >
+          {item.name}
+        </h4>
+        <p
+          className={`text-xs uppercase tracking-wider ${
+            activeReview === i
+              ? "text-gray-200"
+              : "text-gray-500"
+          }`}  >
+          {item.role}
+        </p>
+      </div>
+    </div>
+  ))}
+</div>
           </div>
         </div>
         <div className="py-14 bg-[#f8f5f2]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <div className="bg-gradient-to-r from-[#5b21b6] via-[#7c3aed] to-[#6d28d9] rounded-3xl p-8 sm:p-12 text-center shadow-2xl">
-              <span className="bg-yellow-400 text-black text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">
+            <div className="bg-black rounded-3xl p-8 sm:p-12 text-center shadow-2xl">
+              <span className="bg-black text-white text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">
                 Exclusive Access
               </span>
               <h2 className="text-2xl sm:text-4xl font-bold text-white mt-5 mb-3">
                 Join the{" "}
-                <span className="text-yellow-400">Inner Circle</span>
+                <span className="text-[#6f4e37]">Inner Circle</span>
               </h2>
               <p className="text-gray-200 text-sm sm:text-base max-w-xl mx-auto mb-8">
                 Subscribe to receive exclusive access to private sales, new collections,
@@ -426,7 +577,7 @@ const ProductPage = () => {
               <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
                 <input type="email" placeholder="Enter your email address"
                   className="flex-1 rounded-full px-5 py-3 text-sm outline-none border border-white/20 bg-white/10 text-white placeholder-gray-300 focus:bg-white/20 transition" />
-                <button className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-3 rounded-full text-sm transition-all hover:scale-105 whitespace-nowrap">
+                <button className="bg-white hover:bg-[#6f4e37] text-black font-bold px-6 py-3 rounded-full text-sm transition-all hover:scale-105 whitespace-nowrap">
                   Subscribe Now
                 </button>
               </div>
