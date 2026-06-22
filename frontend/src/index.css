@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -32,7 +33,7 @@ html, body {
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'Poppins', 'Inter', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 html.dark body {
@@ -48,6 +49,7 @@ html.dark .bg-purple-50 { background-color: #5a3d2b !important; }
 html.dark .bg-purple-100 { background-color: #483021 !important; }
 html.dark .bg-\[\#f7f7f7\],
 html.dark .bg-\[\#faf8f6\],
+html.dark .bg-\[\#faf9f6\],
 html.dark .bg-\[\#f6f6f6\],
 html.dark .bg-\[\#f8f5f2\],
 html.dark .bg-\[\#f3f3f3\],

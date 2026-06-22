@@ -3,6 +3,45 @@ const cors = require("cors");
 const path = require("path");
 const multer = require("multer");
 const db = require("./config/db");
+function runMigrations() {
+  const alterQueries = [
+    "ALTER TABLE orders ADD COLUMN city VARCHAR(255) NULL",
+    "ALTER TABLE orders ADD COLUMN state VARCHAR(255) NULL",
+    "ALTER TABLE orders ADD COLUMN pincode VARCHAR(50) NULL",
+    "ALTER TABLE orders ADD COLUMN card_number VARCHAR(255) NULL",
+    "ALTER TABLE orders ADD COLUMN expiry_date VARCHAR(50) NULL",
+    "ALTER TABLE orders ADD COLUMN cvv VARCHAR(50) NULL",
+    "ALTER TABLE orders ADD COLUMN estimated_tax DECIMAL(10,2) DEFAULT 0.00",
+    "ALTER TABLE orders ADD COLUMN discount_code VARCHAR(50) NULL",
+    "ALTER TABLE orders ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00",
+    "ALTER TABLE orders ADD COLUMN shipping_method VARCHAR(100) DEFAULT 'Standard Delivery'"
+  ];
+
+  let completed = 0;
+  let hasFailed = false;
+  alterQueries.forEach(query => {
+    db.query(query, (err) => {
+      if (err) {
+        if (err.errno === 1060 || err.code === "ER_DUP_COLUMNNAME") {
+          completed++;
+        } else {
+          hasFailed = true;
+        }
+      } else {
+        completed++;
+      }
+
+      if (completed === alterQueries.length) {
+        console.log("✅  Database migrations completed successfully!");
+      }
+    });
+  });
+
+  if (hasFailed) {
+    setTimeout(runMigrations, 5000);
+  }
+}
+setTimeout(runMigrations, 3000);
 const app = express();
 const PORT = 5000;
 app.use(cors());
@@ -454,18 +493,189 @@ app.patch("/api/enquiries/:id/status", (req, res) => {
   });
 });
 app.post("/api/orders", (req, res) => {
-  const { customer_name, email, phone, address, total_amount, items, payment_method } = req.body;
+  const {
+    customer_name,
+    email,
+    phone,
+    address,
+    city,
+    state,
+    pincode,
+    total_amount,
+    items,
+    payment_method,
+    card_number,
+    expiry_date,
+    cvv,
+    estimated_tax,
+    discount_code,
+    discount_amount,
+    shipping_method
+  } = req.body;
+
   if (!customer_name || !email || !total_amount) {
-    return res.status(400).json({ success: false, message: "Missing required fields" });}
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
   const sql = `
-    INSERT INTO orders (customer_name, email, phone, address, items, total_amount, payment_method)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`;
-  db.query(sql, [customer_name, email, phone, address, items || "", total_amount, payment_method || "unknown"], (err, result) => {
-    if (err) {
-      console.log("Order insert error:", err);
-      return res.status(500).json({ success: false, message: "Failed to place order" });
+    INSERT INTO orders (
+      customer_name, email, phone, address, city, state, pincode,
+      total_amount, items, payment_method, card_number, expiry_date, cvv,
+      estimated_tax, discount_code, discount_amount, shipping_method
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  db.query(
+    sql,
+    [
+      customer_name,
+      email,
+      phone,
+      address,
+      city || "",
+      state || "",
+      pincode || "",
+      total_amount,
+      items || "",
+      payment_method || "unknown",
+      card_number || "",
+      expiry_date || "",
+      cvv || "",
+      estimated_tax || 0,
+      discount_code || "",
+      discount_amount || 0,
+      shipping_method || "Standard Delivery"
+    ],
+    (err, result) => {
+      if (err) {
+        console.log("Order insert error:", err);
+        return res.status(500).json({ success: false, message: "Failed to place order" });
+      }
+      const orderId = result.insertId;
+      const trackingNumber = "TRK" + Date.now();
+      const ensureShippingTable = `
+        CREATE TABLE IF NOT EXISTS shipping_details (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          order_id INT NOT NULL,
+          tracking_number VARCHAR(100),
+          carrier VARCHAR(100) DEFAULT 'Standard Delivery',
+          shipping_status VARCHAR(50) DEFAULT 'Pending',
+          estimated_delivery DATE NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
+      db.query(ensureShippingTable, () => {
+        db.query(
+          "INSERT INTO shipping_details (order_id, tracking_number, carrier, shipping_status) VALUES (?, ?, ?, ?)",
+          [orderId, trackingNumber, shipping_method || "Standard Delivery", "Pending"],
+          () => {}
+        );
+      });
+      res.status(201).json({ success: true, message: "Order placed successfully", orderId, trackingNumber });
     }
-    res.status(201).json({ success: true, message: "Order placed successfully" });
+  );
+});
+const ensureShippingTable = (cb) => {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS shipping_details (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      tracking_number VARCHAR(100),
+      carrier VARCHAR(100) DEFAULT 'Standard Delivery',
+      shipping_status VARCHAR(50) DEFAULT 'Pending',
+      estimated_delivery DATE NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+  db.query(sql, cb);
+};
+app.get("/api/shipping/all", (req, res) => {
+  ensureShippingTable(() => {
+    const sql = `
+      SELECT sd.*, o.customer_name, o.email, o.phone, o.items, o.total_amount, o.status as order_status, o.created_at as order_date
+      FROM shipping_details sd
+      LEFT JOIN orders o ON sd.order_id = o.id
+      ORDER BY sd.id DESC`;
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.log("Shipping all fetch error:", err);
+        return res.status(500).json({ success: false, message: "Failed to fetch shipments" });
+      }
+      res.status(200).json({ success: true, shipments: results });
+    });
+  });
+});
+app.get("/api/shipping/cards", (req, res) => {
+  ensureShippingTable(() => {
+    const sql = `
+      SELECT
+        COUNT(*) as totalShipments,
+        SUM(CASE WHEN shipping_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN shipping_status = 'Shipped' OR shipping_status = 'In Transit' THEN 1 ELSE 0 END) as inTransit,
+        SUM(CASE WHEN shipping_status = 'Delivered' THEN 1 ELSE 0 END) as delivered,
+        SUM(CASE WHEN shipping_status = 'Out for Delivery' THEN 1 ELSE 0 END) as outForDelivery
+      FROM shipping_details`;
+    db.query(sql, (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: "Cards fetch failed" });
+      const d = results[0] || {};
+      res.status(200).json({
+        totalShipments: d.totalShipments || 0,
+        pending: d.pending || 0,
+        inTransit: d.inTransit || 0,
+        delivered: d.delivered || 0,
+        outForDelivery: d.outForDelivery || 0
+      });
+    });
+  });
+});
+app.get("/api/shipping/:orderId", (req, res) => {
+  const { orderId } = req.params;
+  ensureShippingTable(() => {
+    const sql = `
+      SELECT sd.*, 
+             o.customer_name, o.email, o.phone, o.address, o.city, o.state, o.pincode,
+             o.items, o.total_amount, o.estimated_tax, o.discount_code, o.discount_amount,
+             o.shipping_method, o.card_number, o.expiry_date, o.cvv,
+             o.status as order_status, o.created_at as order_date, o.payment_method
+      FROM shipping_details sd
+      LEFT JOIN orders o ON sd.order_id = o.id
+      WHERE sd.order_id = ?`;
+    db.query(sql, [orderId], (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to fetch shipping" });
+      if (results && results.length > 0) {
+        res.status(200).json({ success: true, shipping: results[0] });
+      } else {
+        res.status(200).json({ success: true, shipping: null });
+      }
+    });
+  });
+});
+app.put("/api/shipping/:orderId", (req, res) => {
+  const { orderId } = req.params;
+  const { tracking_number, carrier, shipping_status, estimated_delivery } = req.body;
+  ensureShippingTable(() => {
+    db.query("SELECT * FROM shipping_details WHERE order_id = ?", [orderId], (err, existing) => {
+      if (err) return res.status(500).json({ success: false, message: "DB error" });
+      if (existing && existing.length > 0) {
+        db.query(
+          "UPDATE shipping_details SET tracking_number=?, carrier=?, shipping_status=?, estimated_delivery=? WHERE order_id=?",
+          [tracking_number, carrier, shipping_status, estimated_delivery || null, orderId],
+          (err2) => {
+            if (err2) return res.status(500).json({ success: false, message: "Update failed" });
+            if (shipping_status === "Delivered") {
+              db.query("UPDATE orders SET status='Completed' WHERE id=?", [orderId], () => {});
+            }
+            res.status(200).json({ success: true, message: "Shipping updated successfully" });
+          }
+        );
+      } else {
+        db.query(
+          "INSERT INTO shipping_details (order_id, tracking_number, carrier, shipping_status, estimated_delivery) VALUES (?, ?, ?, ?, ?)",
+          [orderId, tracking_number, carrier, shipping_status, estimated_delivery || null],
+          (err2) => {
+            if (err2) return res.status(500).json({ success: false, message: "Insert failed" });
+            res.status(201).json({ success: true, message: "Shipping created successfully" });
+          }
+        );
+      }
+    });
   });
 });
 app.get("/api/orders", (req, res) => {

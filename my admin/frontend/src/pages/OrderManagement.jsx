@@ -45,6 +45,10 @@ const OrderManagement = ({ darkMode }) => {
   const [showReturnsModal, setShowReturnsModal] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [trackingOrder, setTrackingOrder] = useState(null);
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [shippingOrder, setShippingOrder] = useState(null);
+  const [shippingData, setShippingData] = useState({ tracking_number: "", carrier: "Standard Delivery", shipping_status: "Pending", estimated_delivery: "" });
+  const [shippingSaving, setShippingSaving] = useState(false);
   const [newOrder, setNewOrder] = useState({
     customer_name: "",
     email: "",
@@ -54,21 +58,18 @@ const OrderManagement = ({ darkMode }) => {
     total_amount: "",
     status: "Pending",
   });
-
   const [performance, setPerformance] = useState({
     monthlyTarget: 85,
     completedPercentage: 85,
     totalRevenue: 0,
     monthlyOrders: 0
   });
-
   useEffect(() => {
     fetchOrders();
     fetchCards();
     fetchActivities();
     fetchPerformance();
   }, []);
-
   const fetchPerformance = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/performance");
@@ -82,7 +83,6 @@ const OrderManagement = ({ darkMode }) => {
       console.log("Error fetching performance:", error);
     }
   };
-
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -121,7 +121,6 @@ const OrderManagement = ({ darkMode }) => {
       console.log("Error fetching orders:", error);
     }
   };
-
   const fetchCards = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/order/cards");
@@ -394,6 +393,25 @@ const OrderManagement = ({ darkMode }) => {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <button
+                            onClick={async () => {
+                              setShippingOrder(item.raw);
+                              try {
+                                const res = await fetch(`http://localhost:5000/api/shipping/${item.raw.id}`);
+                                const d = await res.json();
+                                if (d.success && d.shipping) {
+                                  setShippingData({ tracking_number: d.shipping.tracking_number || "", carrier: d.shipping.carrier || "Standard Delivery", shipping_status: d.shipping.shipping_status || "Pending", estimated_delivery: d.shipping.estimated_delivery ? d.shipping.estimated_delivery.split("T")[0] : "" });
+                                } else {
+                                  setShippingData({ tracking_number: "", carrier: "Standard Delivery", shipping_status: "Pending", estimated_delivery: "" });
+                                }
+                              } catch { setShippingData({ tracking_number: "", carrier: "Standard Delivery", shipping_status: "Pending", estimated_delivery: "" }); }
+                              setShowShippingModal(true);
+                            }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-green-50 hover:bg-green-100 transition-all"
+                            title="Manage Shipping"
+                          >
+                            <img src={carIcon} alt="Ship" className="w-4 h-4 opacity-80" />
+                          </button>
+                          <button
                             onClick={() => setViewOrder(item.raw)}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 transition-all"
                             title="View"
@@ -483,7 +501,6 @@ const OrderManagement = ({ darkMode }) => {
           </div>
         </div>
         <div className="flex flex-col gap-5">
-          {/* Dynamic Recent Activity */}
           <div className="rounded-[28px] p-5 border bg-[#fcfbf8] border-[#ececec]">
             <div>
               <h2 className="text-[22px] font-bold text-[#222]">Recent Activity</h2>
@@ -605,8 +622,7 @@ const OrderManagement = ({ darkMode }) => {
                 <select
                   value={editOrder.status || "Pending"}
                   onChange={(e) => setEditOrder({ ...editOrder, status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white"
-                >
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white" >
                   <option value="Pending">Pending</option>
                   <option value="Completed">Completed</option>
                   <option value="Cancelled">Cancelled</option>
@@ -615,17 +631,12 @@ const OrderManagement = ({ darkMode }) => {
               </div>
             </div>
             <div className="mt-8 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setEditOrder(null)}
-                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"
-              >
+              <button  type="button"  onClick={() => setEditOrder(null)}
+                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300" >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-6 py-2 rounded-xl bg-[#d7a53f] text-[#111] font-semibold hover:opacity-90"
-              >
+              <button type="submit"
+                className="px-6 py-2 rounded-xl bg-[#d7a53f] text-[#111] font-semibold hover:opacity-90" >
                 Save Changes
               </button>
             </div>
@@ -634,92 +645,59 @@ const OrderManagement = ({ darkMode }) => {
       )}
       {showAddForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <form
-            onSubmit={handleAddOrderSubmit}
-            className={`w-full max-w-xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}
-          >
+          <form onSubmit={handleAddOrderSubmit}
+            className={`w-full max-w-xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl"
-            >
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
               x
             </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Create New Order</h2>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Emma Watson"
-                  value={newOrder.customer_name}
+                <input  type="text"  required  placeholder="e.g. Emma Watson"  value={newOrder.customer_name}
                   onChange={(e) => setNewOrder({ ...newOrder, customer_name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"/>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. emma@gmail.com"
-                    value={newOrder.email}
+                  <input type="email" required placeholder="e.g. emma@gmail.com" value={newOrder.email}
                     onChange={(e) => setNewOrder({ ...newOrder, email: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"
-                  />
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. +91 9876543210"
-                    value={newOrder.phone}
+                  <input type="text" placeholder="e.g. +91 9876543210" value={newOrder.phone}
                     onChange={(e) => setNewOrder({ ...newOrder, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"
-                  />
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Items / Products</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ergonomic Leather Chair"
-                  value={newOrder.items}
+                <input  type="text"  required  placeholder="e.g. Ergonomic Leather Chair"  value={newOrder.items}
                   onChange={(e) => setNewOrder({ ...newOrder, items: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Shipping Address</label>
-                <textarea
-                  placeholder="Street address, City, Pin code"
-                  value={newOrder.address}
+                <textarea placeholder="Street address, City, Pin code" value={newOrder.address}
                   onChange={(e) => setNewOrder({ ...newOrder, address: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] h-20"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] h-20" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Total Amount (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 15000"
-                    value={newOrder.total_amount}
+                  <input  type="number"  required  placeholder="e.g. 15000"  value={newOrder.total_amount}
                     onChange={(e) => setNewOrder({ ...newOrder, total_amount: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"
-                  />
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
-                  <select
-                    value={newOrder.status}
-                    onChange={(e) => setNewOrder({ ...newOrder, status: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white"
-                  >
+                  <select  value={newOrder.status}  onChange={(e) => setNewOrder({ ...newOrder, status: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white">
                     <option value="Pending">Pending</option>
                     <option value="Completed">Completed</option>
                     <option value="Cancelled">Cancelled</option>
@@ -728,17 +706,12 @@ const OrderManagement = ({ darkMode }) => {
               </div>
             </div>
             <div className="mt-8 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"
-              >
+              <button type="button" onClick={() => setShowAddForm(false)}
+                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"  >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-6 py-2 rounded-xl bg-[#6f4e37] text-[#111] font-semibold hover:opacity-90"
-              >
+              <button type="submit"
+                className="px-6 py-2 rounded-xl bg-[#6f4e37] text-[#111] font-semibold hover:opacity-90" >
                 Add Order
               </button>
             </div>
@@ -748,10 +721,8 @@ const OrderManagement = ({ darkMode }) => {
       {showReturnsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-3xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button
-              onClick={() => setShowReturnsModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl"
-            >
+            <button  onClick={() => setShowReturnsModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
               x
             </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Manage Returns & Swaps</h2>
@@ -789,8 +760,7 @@ const OrderManagement = ({ darkMode }) => {
                                 console.log(e);
                               }
                             }}
-                            className="px-3 py-1 bg-[#6f4e37] text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors"
-                          >
+                            className="px-3 py-1 bg-[#6f4e37] text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors"  >
                             Mark Returned
                           </button>
                         ) : (
@@ -805,8 +775,7 @@ const OrderManagement = ({ darkMode }) => {
             <div className="mt-8 text-right">
               <button
                 onClick={() => setShowReturnsModal(false)}
-                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"
-              >
+                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"  >
                 Close
               </button>
             </div>
@@ -821,8 +790,7 @@ const OrderManagement = ({ darkMode }) => {
                 setShowTrackingModal(false);
                 setTrackingOrder(null);
               }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl"
-            >
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
               x
             </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Shipment Tracking</h2>
@@ -853,7 +821,7 @@ const OrderManagement = ({ darkMode }) => {
               </div>
               <div className="relative">
                 <div className={`absolute -left-[39px] top-1.5 w-4 h-4 rounded-full ${
-                  ["completed", "delivered"].includes(trackingOrder.status?.toLowerCase()) ? "bg-[#6f4e37]]" : "bg-gray-300"
+                  ["completed", "delivered"].includes(trackingOrder.status?.toLowerCase()) ? "bg-[#6f4e37]" : "bg-gray-300"
                 }`}></div>
                 <h4 className="font-semibold text-sm">Delivered</h4>
                 <p className="text-xs text-gray-500 mt-1">Package successfully signed for and received by client.</p>
@@ -873,8 +841,98 @@ const OrderManagement = ({ darkMode }) => {
           </div>
         </div>
       )}
+
+      {showShippingModal && shippingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setShippingSaving(true);
+              try {
+                await axios.put(`http://localhost:5000/api/shipping/${shippingOrder.id}`, {
+                  tracking_number: shippingData.tracking_number,
+                  carrier: shippingData.carrier,
+                  shipping_status: shippingData.shipping_status,
+                  estimated_delivery: shippingData.estimated_delivery || null,
+                });
+                setShowShippingModal(false);
+                fetchOrders();
+              } catch (err) {
+                console.log(err);
+              }
+              setShippingSaving(false);
+            }}
+            className={`w-full max-w-lg rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}
+          >
+            <button type="button" onClick={() => setShowShippingModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center text-2xl">🚚</div>
+              <div>
+                <h2 className={`text-xl font-bold ${darkMode ? "text-white" : "text-[#111]"}`}>Manage Shipping</h2>
+                <p className="text-sm text-gray-400">Order #{shippingOrder.id} — {shippingOrder.customer_name || shippingOrder.customer}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tracking Number</label>
+                <input
+                  type="text"
+                  value={shippingData.tracking_number}
+                  onChange={e => setShippingData({ ...shippingData, tracking_number: e.target.value })}
+                  placeholder="e.g. TRK1718290123"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#d7a53f] font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Carrier / Courier</label>
+                <select
+                  value={shippingData.carrier}
+                  onChange={e => setShippingData({ ...shippingData, carrier: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white">
+                  <option value="Standard Delivery">Standard Delivery</option>
+                  <option value="Delhivery">Delhivery</option>
+                  <option value="BlueDart">BlueDart</option>
+                  <option value="DTDC">DTDC</option>
+                  <option value="Ekart Logistics">Ekart Logistics</option>
+                  <option value="India Post">India Post</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="Amazon Logistics">Amazon Logistics</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Shipping Status</label>
+                <select
+                  value={shippingData.shipping_status}
+                  onChange={e => setShippingData({ ...shippingData, shipping_status: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white" >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Returned">Returned</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Estimated Delivery Date</label>
+                <input  type="date"  value={shippingData.estimated_delivery}
+                  onChange={e => setShippingData({ ...shippingData, estimated_delivery: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"/>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowShippingModal(false)} className="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200">
+                Cancel
+              </button>
+              <button type="submit" disabled={shippingSaving} className="px-6 py-2.5 rounded-xl bg-[#6f4e37] text-white font-semibold text-sm hover:opacity-90 disabled:opacity-60" >
+                {shippingSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
-
 export default OrderManagement;

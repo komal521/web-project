@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Wishlist from "./pages/Wishlist";
+import OrderConfirmation from "./pages/OrderConfirmation";
+
 function App() {
   return (
     <BrowserRouter>
@@ -28,7 +30,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/wishlist" element={<Wishlist />} />
-        
+        <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
       </Routes>
     </BrowserRouter>
   );

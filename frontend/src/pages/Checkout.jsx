@@ -5,7 +5,9 @@ import Footer from "../component/Footer";
 import upiIcon from "../assets/credit-card.png";
 import cardIcon from "../assets/credit-card (1).png";
 import cashIcon from "../assets/money.png";
-
+import locationIcon from "../assets/location.png";
+import carIcon from "../assets/car.png";
+import lockIcon from "../assets/lock.png";
 const Checkout = () => {
   const [cartItems, setCartItems] = useState([]);
   const [formData, setFormData] = useState({
@@ -13,19 +15,22 @@ const Checkout = () => {
     email: "",
     phone: "",
     address: "",
-    payment_method: "upi"
+    city: "",
+    state: "",
+    pincode: "",
+    payment_method: "upi",
+    card_number: "",
+    expiry_date: "",
+    cvv: ""
   });
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
-
   useEffect(() => {
     const items = JSON.parse(localStorage.getItem("cart")) || [];
     setCartItems(items);
     if (items.length === 0) {
       navigate("/cart");
     }
-
     const user = JSON.parse(localStorage.getItem("user")) || {};
     if (user) {
       setFormData((prev) => ({
@@ -33,29 +38,40 @@ const Checkout = () => {
         customer_name: user.fullName || "",
         email: user.email || "",
         phone: user.phone || "",
-        address: user.address || ""
+        address: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        pincode: user.pincode || ""
       }));
     }
   }, [navigate]);
   const total = cartItems.reduce((acc, item) => acc + (parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0), 0);
+  const tax = total * 0.18; // 18% GST/Tax
+  const grandTotal = total + tax;
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const itemNames = cartItems.map((item) => item.title).join(", ");
+    const itemNames = cartItems.map((item) => `${item.title} (Qty: 1)`).join(", ");
     try {
       const response = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, total_amount: total, items: itemNames, payment_method: formData.payment_method })
+        body: JSON.stringify({
+          ...formData,
+          total_amount: grandTotal,
+          estimated_tax: tax,
+          items: itemNames,
+          shipping_method: "Standard Delivery"
+        })
       });
       const data = await response.json();
       if (data.success) {
-        setSuccess(true);
+        localStorage.setItem(`order_items_${data.orderId}`, JSON.stringify(cartItems));
         localStorage.removeItem("cart");
-        setTimeout(() => navigate("/home"), 3000);
+        navigate(`/order-confirmation/${data.orderId}`);
       } else {
         alert(data.message || "Failed to place order");
       }
@@ -65,157 +81,265 @@ const Checkout = () => {
       setSubmitting(false);
     }
   };
-  if (success) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-[#f8f6f2] flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-200 p-10 rounded-3xl shadow-lg text-center max-w-md w-full">
-            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-green-100">
-              <span className="text-4xl">✅</span>
-            </div>
-            <h2 className="text-3xl font-bold text-[#111] mb-4">Order Placed!</h2>
-            <p className="text-gray-500 mb-8">Thank you for your purchase. We'll send you an email confirmation shortly.</p>
-            <p className="text-sm text-gray-400">Redirecting to home...</p>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f6f2] py-12 px-4 md:px-8 text-[#111]">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
-          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-8">
-            <h2 className="text-2xl font-bold mb-6 text-[#111] font-serif">Billing Details</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="text-sm text-gray-600 font-medium">Full Name</label>
-                <input type="text" name="customer_name" required value={formData.customer_name} onChange={handleChange}
-                  className="w-full mt-2 border border-gray-200 bg-gray-50 text-[#111] rounded-xl px-4 py-3 outline-none focus:border-[#d7a53f] focus:ring-1 focus:ring-[#d7a53f] transition-all" placeholder="John Doe" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="text-sm text-gray-600 font-medium">Email Address</label>
-                  <input type="email" name="email" required value={formData.email} onChange={handleChange}
-                    className="w-full mt-2 border border-gray-200 bg-gray-50 text-[#111] rounded-xl px-4 py-3 outline-none focus:border-[#d7a53f] focus:ring-1 focus:ring-[#d7a53f] transition-all" placeholder="john@example.com" />
+      <div className="min-h-screen bg-[#faf9f6] py-12 px-4 md:px-8 text-[#111] font-sans">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-8 font-medium tracking-wide uppercase">
+            <span className="cursor-pointer hover:text-gray-800 transition-colors" onClick={() => navigate("/home")}>Shop</span>
+            <span>&gt;</span>
+            <span className="cursor-pointer hover:text-gray-800 transition-colors" onClick={() => navigate("/cart")}>Cart</span>
+            <span>&gt;</span>
+            <span className="text-[#6f4e37] font-bold">Checkout</span>
+          </div>
+          <div className="grid lg:grid-cols-12 gap-10 items-start">
+            <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-8">
+              <div className="bg-white border border-gray-100 rounded-3xl p-8 md:p-10 shadow-sm">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100 flex-shrink-0">
+                    <img src={locationIcon} alt="Location" className="w-6 h-6 object-contain" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-805 tracking-tight font-serif">Shipping Details</h2>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-600 font-medium">Phone Number</label>
-                  <input type="text" name="phone" required value={formData.phone} onChange={handleChange}
-                    className="w-full mt-2 border border-gray-200 bg-gray-50 text-[#111] rounded-xl px-4 py-3 outline-none focus:border-[#d7a53f] focus:ring-1 focus:ring-[#d7a53f] transition-all" placeholder="+91 9876543210" />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 font-medium">Shipping Address</label>
-                <textarea name="address" required value={formData.address} onChange={handleChange} rows="3"
-                  className="w-full mt-2 border border-gray-200 bg-gray-50 text-[#111] rounded-xl px-4 py-3 outline-none focus:border-[#d7a53f] focus:ring-1 focus:ring-[#d7a53f] transition-all" placeholder="123 Street Name, City, Country"></textarea>
-              </div>
+                <p className="text-sm text-gray-400 mb-8 ml-16">Please enter your delivery information carefully.</p>
 
-              {/* Payment Methods */}
-              <div className="pt-4 border-t border-gray-100 mt-6">
-  <h3 className="text-lg font-bold text-[#111] mb-4 font-serif">
-    Payment Method
-  </h3>
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <label
-      className={`cursor-pointer border rounded-2xl p-4 flex flex-col items-center gap-3 transition-all ${
-        formData.payment_method === "upi"
-          ? "border-[#d7a53f] bg-orange-50/50 shadow-sm ring-1 ring-[#d7a53f]"
-          : "border-gray-200 bg-white hover:bg-gray-50"
-      }`} >
-      <input  type="radio"  name="payment_method" value="upi" checked={formData.payment_method === "upi"}
-        onChange={handleChange} className="sr-only"/>
-      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-        <img src={upiIcon} alt="UPI" className="w-5 h-5" />
-      </div>
-      <span className="font-semibold text-sm text-[#111]">
-        UPI
-      </span>
-    </label>
-    <label  className={`cursor-pointer border rounded-2xl p-4 flex flex-col items-center gap-3 transition-all ${
-        formData.payment_method === "card"
-          ? "border-[#d7a53f] bg-orange-50/50 shadow-sm ring-1 ring-[#d7a53f]"
-          : "border-gray-200 bg-white hover:bg-gray-50"  }`} >
-      <input  type="radio"  name="payment_method"  value="card"  checked={formData.payment_method === "card"}
-        onChange={handleChange}  className="sr-only" />
-      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-        <img src={cardIcon} alt="Card" className="w-5 h-5" />
-      </div>
-      <span className="font-semibold text-sm text-[#111]">
-        Card
-      </span>
-    </label>
-    <label className={`cursor-pointer border rounded-2xl p-4 flex flex-col items-center gap-3 transition-all ${
-        formData.payment_method === "cod"
-          ? "border-[#6f4e37] bg-orange-50/50 shadow-sm ring-1 ring-[#6f4e37]"
-          : "border-gray-200 bg-white hover:bg-gray-50"
-      }`} >
-      <input type="radio" name="payment_method" value="cod" checked={formData.payment_method === "cod"}
-        onChange={handleChange}  className="sr-only"/>
-      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-        <img src={cashIcon} alt="Cash" className="w-5 h-5" />
-      </div>
-      <span className="font-semibold text-sm text-[#111]">
-        Cash on Delivery
-      </span>
-    </label>
-  </div>
-</div><div>
+                <div className="space-y-5">
+                  <div>
+                    <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      name="customer_name"
+                      required
+                      value={formData.customer_name}
+                      onChange={handleChange}
+                      className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                      placeholder="Alexander Sterling"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        required
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                        placeholder="alexander@luxury.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Phone Number</label>
+                      <input type="text" name="phone" required value={formData.phone} onChange={handleChange}
+                        className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                        placeholder="+1 (555) 000-0000"  />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Shipping Address</label>
+                    <input type="text" name="address" required value={formData.address}
+                      onChange={handleChange}
+                      className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                      placeholder="Apt 4B, 725 5th Ave" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-5">
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">City</label>
+                      <input  type="text"  name="city"  required value={formData.city}
+                        onChange={handleChange}
+                        className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-4 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                        placeholder="New York"  />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">State</label>
+                      <input type="text"  name="state"  required  value={formData.state}
+                        onChange={handleChange}
+                        className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-4 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                        placeholder="NY" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Pincode</label>
+                      <input  type="text"  name="pincode"  required  value={formData.pincode}  onChange={handleChange}
+                        className="w-full border border-gray-200 bg-gray-50/50 text-gray-800 rounded-xl px-4 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                        placeholder="10022" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="pt-4 border-t border-gray-100 mt-6">
+              <div className="bg-white border border-gray-100 rounded-3xl p-8 md:p-10 shadow-sm">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100 flex-shrink-0">
+                    <img src={lockIcon} alt="Lock" className="w-6 h-6 object-contain" />
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-850 tracking-tight font-serif">Payment Method</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                  <label className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
+                      formData.payment_method === "card"
+                        ? "border-[#6f4e37] bg-amber-50/10 shadow-sm ring-1 ring-[#6f4e37]"
+                        : "border-gray-100 bg-white hover:bg-gray-50"
+                    }`} >
+                    <input type="radio" name="payment_method" value="card" checked={formData.payment_method === "card"}
+                      onChange={handleChange} className="sr-only" />
+                    <div className="w-full flex justify-between items-center">
+                      <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100">
+                        <img src={cardIcon} alt="Card" className="w-5 h-5" />
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.payment_method === 'card' ? 'border-[#6f4e37]' : 'border-gray-300'}`}>
+                        {formData.payment_method === 'card' && <div className="w-3 h-3 rounded-full bg-[#6f4e37]" />}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-805">Credit / Debit Card</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Visa, Mastercard, Amex</p>
+                    </div>
+                  </label>
+                  <label
+                    className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
+                      formData.payment_method === "upi"
+                        ? "border-[#6f4e37] bg-amber-50/10 shadow-sm ring-1 ring-[#6f4e37]"
+                        : "border-gray-100 bg-white hover:bg-gray-50"
+                    }`} >
+                    <input  type="radio"  name="payment_method"  value="upi"  checked={formData.payment_method === "upi"}
+                      onChange={handleChange}  className="sr-only" />
+                    <div className="w-full flex justify-between items-center">
+                      <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100">
+                        <img src={upiIcon} alt="UPI" className="w-5 h-5" />
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.payment_method === 'upi' ? 'border-[#6f4e37]' : 'border-gray-300'}`}>
+                        {formData.payment_method === 'upi' && <div className="w-3 h-3 rounded-full bg-[#6f4e37]" />}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-805">UPI Payment</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Google Pay, Apple Pay</p>
+                    </div>
+                  </label>
+                  <label
+                    className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
+                      formData.payment_method === "cod"
+                        ? "border-[#6f4e37] bg-amber-50/10 shadow-sm ring-1 ring-[#6f4e37]"
+                        : "border-gray-100 bg-white hover:bg-gray-50"  }`}  >
+                    <input   type="radio"  name="payment_method"  value="cod"  checked={formData.payment_method === "cod"}
+                      onChange={handleChange}  className="sr-only" />
+                    <div className="w-full flex justify-between items-center">
+                      <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100">
+                        <img src={cashIcon} alt="Cash" className="w-5 h-5" />
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.payment_method === 'cod' ? 'border-[#6f4e37]' : 'border-gray-300'}`}>
+                        {formData.payment_method === 'cod' && <div className="w-3 h-3 rounded-full bg-[#6f4e37]" />}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-805">Cash On Delivery</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Pay at your doorstep</p>
+                    </div>
+                  </label>
+                </div>
+                {formData.payment_method === "card" && (
+                  <div className="space-y-5 pt-5 border-t border-gray-100 animate-fadeIn">
+                    <div>
+                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Card Number</label>
+                      <div className="relative">
+                        <input  type="text"  name="card_number"  required={formData.payment_method === "card"}
+                          value={formData.card_number} onChange={handleChange}
+                          className="w-full border border-gray-200 bg-gray-50/50 text-gray-805 rounded-xl pl-12 pr-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                          placeholder="0000 0000 0000 0000" />
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">
+                          <img src={cardIcon} alt="Card" className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-5">
+                      <div>
+                        <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Expiry Date</label>
+                        <input type="text" name="expiry_date" required={formData.payment_method === "card"}
+                          value={formData.expiry_date} onChange={handleChange}
+                          className="w-full border border-gray-200 bg-gray-50/50 text-gray-855 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                          placeholder="MM/YY"  />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">CVV</label>
+                        <input type="password" name="cvv" maxLength="3" required={formData.payment_method === "card"}
+                          value={formData.cvv} onChange={handleChange}
+                          className="w-full border border-gray-200 bg-gray-50/50 text-gray-855 rounded-xl px-5 py-4 text-base outline-none focus:bg-white focus:border-[#6f4e37] transition-all"
+                          placeholder="123"/>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="pt-2">
                 <button type="submit" disabled={submitting}
-                  className="w-full bg-[#6f4e37] hover:opacity-90 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-amber-900/20 disabled:opacity-60 flex items-center justify-center gap-2">
-                  {submitting ? (
-                    <span>Processing...</span>
-                  ) : (
-                    <>
-                      <span>Pay ₹{total.toFixed(2)}</span>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </>
-                  )}
+                  className="w-full bg-[#6f4e37] hover:bg-[#5a3e2a] text-white py-5 rounded-full font-bold text-sm tracking-widest uppercase transition-all shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 h-16" >
+                  {submitting ? "Processing..." : `Pay Now (₹${grandTotal.toFixed(2)})`}
                 </button>
               </div>
             </form>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-3xl p-8 h-fit shadow-sm sticky top-24">
-            <h2 className="text-2xl font-bold mb-6 text-[#111] font-serif">Order Summary</h2>
-            <div className="space-y-4 mb-6">
-              {cartItems.map((item, i) => (
-                <div key={i} className="flex justify-between items-center p-3 rounded-2xl border border-gray-100 hover:shadow-sm transition-all bg-gray-50/50">
-                  <div className="flex items-center gap-4">
-                    <img src={item.img || item.image} alt={item.title} className="w-14 h-14 rounded-xl object-cover border border-gray-200 bg-white" />
-                    <div>
-                      <p className="font-bold text-sm text-[#111]">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.tag || item.subtitle || "Qty: 1"}</p>
+            <div className="lg:col-span-5 space-y-8">
+              {/* Order Summary */}
+              <div className="bg-white border border-gray-100 rounded-3xl p-8 md:p-10 shadow-sm">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-805 mb-6 tracking-tight font-serif">Order Summary</h2>
+                <div className="space-y-5 max-h-[350px] overflow-y-auto pr-1">
+                  {cartItems.map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-3.5 border-b border-gray-50 last:border-0">
+                      <div className="flex items-center gap-4">
+                        <img src={item.img || item.image} alt={item.title}
+                          className="w-14 h-14 rounded-2xl object-cover border border-gray-100 bg-gray-50" />
+                        <div>
+                          <p className="font-bold text-sm text-gray-850 leading-snug">{item.title}</p>
+                          <p className="text-xs text-gray-400 mt-1">{item.tag || item.subtitle || "Qty: 1"}</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-sm text-gray-800 tracking-tight">{item.price}</span>
                     </div>
-                  </div>
-                  <span className="font-bold text-[#111] bg-white px-3 py-1.5 rounded-lg border border-gray-200">{item.price}</span>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="border-t border-dashed border-gray-200 my-6"></div>
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Subtotal</span>
-                <span className="font-semibold text-[#111]">₹{total.toFixed(2)}</span>
+                <div className="border-t border-dashed border-gray-100 my-6"></div>
+                <div className="space-y-4 text-sm">
+                  <div className="flex justify-between text-gray-400">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-gray-700">₹{total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400 items-center">
+                    <span className="flex items-center gap-2">
+                      <img src={carIcon} alt="Car" className="w-4 h-4 object-contain" />
+                      Shipping
+                    </span>
+                    <span className="font-bold text-green-600">Free</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400">
+                    <span>Estimated Tax</span>
+                    <span className="font-semibold text-gray-700">₹{tax.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="border-t border-gray-100 my-6 pt-5 flex justify-between items-center">
+                  <span className="font-bold text-base text-gray-800">Total Amount</span>
+                  <span className="text-2xl font-bold text-[#6f4e37]">₹{grandTotal.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Shipping</span>
-                <span className="font-semibold text-black">Free</span>
+              <div className="bg-[#fdfcfb] rounded-3xl p-6 border border-[#ece7df] flex items-start gap-4">
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border border-gray-100 flex-shrink-0">
+                  <img src={lockIcon} alt="Secure Lock" className="w-4.5 h-4.5 object-contain" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800 flex items-center gap-1">
+                    Secure Transaction
+                    <span className="cursor-pointer text-gray-450 hover:text-gray-850">ⓘ</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                    Your data is encrypted using 256-bit SSL protocols. VogueCart ensures a 100% safe payment experience.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="border-t border-gray-200 pt-4 flex justify-between items-center text-xl font-bold text-[#111]">
-              <span>Total</span>
-              <span className="text-[#6f4e37]">₹{total.toFixed(2)}</span>
-            </div> 
-            <div className="mt-8 bg-[#fcfbf8] rounded-xl p-4 border border-[#ece7df] flex items-start gap-3">
-              <svg className="w-5 h-5 text-black flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-              <div>
-                <p className="text-sm font-bold text-[#111]">Secure Payment</p>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Your payment information is processed securely. We do not store your credit card details.</p>
+              <div className="flex justify-center items-center gap-5 opacity-40 pt-2">
+                <img src={cardIcon} alt="Visa" className="h-5 object-contain" />
+                <img src={upiIcon} alt="UPI" className="h-5 object-contain" />
+                <img src={cashIcon} alt="COD" className="h-5 object-contain" />
               </div>
             </div>
           </div>

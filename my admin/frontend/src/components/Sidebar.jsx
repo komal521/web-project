@@ -23,14 +23,15 @@ import Support from "../pages/Support";
 import Profile from "../pages/Profile";
 import Settings from "../pages/Settings";
 const SIDEBAR_W = "w-[260px]";
+
 const menuItems = [
   {
     section: "MAIN MENU",
     items: [
-      { name: "Dashboard", icon: dashboardIcon },
-      { name: "Order Management", icon: bookingIcon },
+      { name: "Dashboard",          icon: dashboardIcon },
+      { name: "Order Management",   icon: bookingIcon },
       { name: "Product Management", icon: packageIcon },
-      { name: "Categories", icon: menuIcon },
+      { name: "Categories",         icon: menuIcon },
     ],
   },
   {
