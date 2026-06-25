@@ -8,6 +8,8 @@ import userIcon from "../assets/user.png";
 import growthIcon from "../assets/growth.png";
 import filterIcon from "../assets/filter.png";
 import downloadIcon from "../assets/download.png";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 const defaultStats = [
   {
     title: "Total Revenue",
@@ -104,6 +106,30 @@ const Reports = ({ darkMode }) => {
     fetchRevenueGraph();
     fetchRecentReports();
   }, []);
+
+  const handleExportPDF = () => {
+    if (recentReports.length === 0) {
+      alert("No report data to export!");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Revenue & Orders Full Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Exported: ${new Date().toLocaleString()}`, 14, 26);
+    doc.text(`Total Revenue: ${stats[0]?.value || 'N/A'}   Total Orders: ${stats[1]?.value || 'N/A'}   Active Users: ${stats[2]?.value || 'N/A'}`, 14, 34);
+    const tableColumn = ["Report ID", "Client Name", "Revenue", "Status", "Date"];
+    const tableRows = recentReports.map(r => [r.id, r.client, r.revenue, r.status, r.date]);
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 42,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 251] },
+    });
+    doc.save(`Revenue_Report_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`);
+  };
   const chartData = revenueData.slice(0, 9);
   const maxVal = Math.max(...chartData, 10000);
   const points = chartData.map((val, idx) => {
@@ -125,7 +151,6 @@ const Reports = ({ darkMode }) => {
     <div
       className={`p-3 sm:p-4 md:p-6 lg:p-8 min-h-screen transition-all duration-300
       ${darkMode ? "bg-[#0f0f0f]" : "bg-[#f5f7fb]"}`}>
-      {/* TOP CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-10">
         {stats.map((item, index) => (
           <div key={index}
@@ -148,7 +173,6 @@ const Reports = ({ darkMode }) => {
         ))}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_0.8fr] gap-5 mt-6">
-        {/* LEFT SIDE */}
         <div
           className={`rounded-3xl p-5 md:p-6 shadow-sm border transition-all duration-300 hover:shadow-xl
           ${
@@ -180,6 +204,7 @@ const Reports = ({ darkMode }) => {
                 Filters
               </button>
               <button
+                onClick={handleExportPDF}
                 className={`h-11 px-4 rounded-xl border flex items-center gap-2 text-sm transition-all duration-300 hover:scale-105
                 ${
                   darkMode
@@ -187,7 +212,7 @@ const Reports = ({ darkMode }) => {
                     : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
                 }`}>
                 <img src={downloadIcon} alt="" className="w-4 h-4 object-contain"/>
-                Export
+                Export PDF
               </button>
             </div>
           </div>

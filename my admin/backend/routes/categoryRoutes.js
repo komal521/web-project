@@ -2,7 +2,6 @@ const express = require("express");
 const multer = require("multer");
 const pool = require("../db");
 const router = express.Router();
-
 const ensureCategoriesTable = async () => {
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS categories (
@@ -21,14 +20,11 @@ const ensureCategoriesTable = async () => {
       image VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-  `);
-};
-
+  `);};
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
   },
-
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
   },
@@ -157,6 +153,70 @@ router.get("/cards", async (req, res) => {
       success: false,
       message: "Cards Fetch Error",
     });
+  }
+});
+
+router.put("/:id", upload.single("image"), async (req, res) => {
+  try {
+    await ensureCategoriesTable();
+    const { id } = req.params;
+    const {
+      category_name,
+      slug,
+      parent_category,
+      description,
+      seo_title,
+      seo_description,
+      status,
+      featured,
+      sitemap,
+      global_search,
+      breadcrumb,
+    } = req.body;
+
+    let query;
+    let params;
+    if (req.file) {
+      const image = req.file.filename;
+      query = `UPDATE categories SET category_name=?, slug=?, parent_category=?, description=?, seo_title=?, seo_description=?, status=?, featured=?, sitemap=?, global_search=?, breadcrumb=?, image=? WHERE id=?`;
+      params = [
+        category_name,
+        slug || "",
+        parent_category || "",
+        description || "",
+        seo_title || "",
+        seo_description || "",
+        status || "Active",
+        featured !== undefined ? Number(featured) : 0,
+        sitemap !== undefined ? Number(sitemap) : 1,
+        global_search !== undefined ? Number(global_search) : 1,
+        breadcrumb || "",
+        image,
+        id,
+      ];
+    } else {
+      query = `UPDATE categories SET category_name=?, slug=?, parent_category=?, description=?, seo_title=?, seo_description=?, status=?, featured=?, sitemap=?, global_search=?, breadcrumb=? WHERE id=?`;
+      params = [
+        category_name,
+        slug || "",
+        parent_category || "",
+        description || "",
+        seo_title || "",
+        seo_description || "",
+        status || "Active",
+        featured !== undefined ? Number(featured) : 0,
+        sitemap !== undefined ? Number(sitemap) : 1,
+        global_search !== undefined ? Number(global_search) : 1,
+        breadcrumb || "",
+        id,
+      ];
+    }
+
+    await pool.query(query, params);
+    res.json({ success: true, message: "Category updated successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Update Failed" });
   }
 });
 

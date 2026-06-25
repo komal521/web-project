@@ -23,6 +23,8 @@ const CreateUserForm = ({ setShowForm, onUserCreated, editUser }) => {
     confirmPassword: "",
     address: "",
   });
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
   useEffect(() => {
     if (editUser) {
       setFormData({
@@ -36,6 +38,9 @@ const CreateUserForm = ({ setShowForm, onUserCreated, editUser }) => {
         confirmPassword: "",
         address: editUser.address || "",
       });
+      if (editUser.profileImage) {
+        setProfileImagePreview(`http://localhost:5000/uploads/${editUser.profileImage}`);
+      }
     }
   }, [editUser]);
   const handleChange = (e) => {
@@ -51,30 +56,45 @@ const CreateUserForm = ({ setShowForm, onUserCreated, editUser }) => {
       !formData.phone ||
       !formData.department ||
       !formData.role ||
-      !formData.password ||
+      (!editUser && !formData.password) ||
       !formData.address
     ) {
-      alert("Please fill all fields");
+      alert("Please fill all required fields");
       return;
     }
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
     try {
       let res;
       if (editUser) {
-        res = await axios.put(`http://localhost:5000/api/users/${editUser.id}`, formData);
+        const fd = new FormData();
+        fd.append("fullName", formData.fullName);
+        fd.append("email", formData.email);
+        fd.append("phone", formData.phone);
+        fd.append("department", formData.department);
+        fd.append("role", formData.role);
+        fd.append("status", formData.status);
+        fd.append("address", formData.address);
+        if (formData.password) fd.append("password", formData.password);
+        if (profileImageFile) fd.append("profileImage", profileImageFile);
+        res = await axios.put(`http://localhost:5000/api/users/${editUser.id}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
       } else {
-        res = await axios.post("http://localhost:5000/api/users/create-user", {
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          department: formData.department,
-          role: formData.role,
-          status: formData.status,
-          password: formData.password,
-          address: formData.address,
+        const fd = new FormData();
+        fd.append("fullName", formData.fullName);
+        fd.append("email", formData.email);
+        fd.append("phone", formData.phone);
+        fd.append("department", formData.department);
+        fd.append("role", formData.role);
+        fd.append("status", formData.status);
+        fd.append("password", formData.password);
+        fd.append("address", formData.address);
+        if (profileImageFile) fd.append("profileImage", profileImageFile);
+        res = await axios.post("http://localhost:5000/api/users/create-user", fd, {
+          headers: { "Content-Type": "multipart/form-data" }
         });
       }
       alert(res.data.message);
@@ -92,11 +112,13 @@ const CreateUserForm = ({ setShowForm, onUserCreated, editUser }) => {
         confirmPassword: "",
         address: "",
       });
+      setProfileImageFile(null);
+      setProfileImagePreview(null);
     } catch (error) {
       console.log(error);
       const message =
         error?.response?.data?.message ||
-        "Backend ";
+        "Backend error";
       alert(message);
     }
   };
@@ -114,17 +136,29 @@ const CreateUserForm = ({ setShowForm, onUserCreated, editUser }) => {
           </div>
           <div className="flex flex-col items-center justify-center mb-10">
             <div className="relative">
-              <img  src={profileImg}  alt=""
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-[6px] border-[#f3e4bc]"/>
-              <div className="absolute bottom-0 right-0 bg-[#d9a63d] p-2 rounded-full shadow-md">
+              <img
+                src={profileImagePreview || profileImg}
+                alt=""
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-[6px] border-[#f3e4bc]" />
+              <label className="absolute bottom-0 right-0 bg-[#d9a63d] p-2 rounded-full shadow-md cursor-pointer">
                 <img src={cameraIcon} alt="" className="w-4 h-4" />
-              </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    setProfileImageFile(file);
+                    if (file) setProfileImagePreview(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
             </div>
             <h2 className="mt-4 text-[#333] font-semibold text-lg">
               User Portrait
             </h2>
             <p className="text-gray-400 text-sm text-center">
-              JPG, PNG or GIF • MAX 5MB
+              Click camera to upload • JPG, PNG or GIF • MAX 5MB
             </p>
           </div>
           <div className="mb-10">

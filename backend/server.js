@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const multer = require("multer");
+const bcrypt = require("bcryptjs");
 const db = require("./config/db");
 function runMigrations() {
   const alterQueries = [
@@ -14,9 +15,10 @@ function runMigrations() {
     "ALTER TABLE orders ADD COLUMN estimated_tax DECIMAL(10,2) DEFAULT 0.00",
     "ALTER TABLE orders ADD COLUMN discount_code VARCHAR(50) NULL",
     "ALTER TABLE orders ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00",
-    "ALTER TABLE orders ADD COLUMN shipping_method VARCHAR(100) DEFAULT 'Standard Delivery'"
-  ];
-
+    "ALTER TABLE orders ADD COLUMN shipping_method VARCHAR(100) DEFAULT 'Standard Delivery'",
+    "ALTER TABLE products ADD COLUMN variants JSON NULL",
+    "ALTER TABLE products ADD COLUMN tags JSON NULL",
+    "ALTER TABLE products ADD COLUMN rating DECIMAL(3,2) DEFAULT NULL" ];
   let completed = 0;
   let hasFailed = false;
   alterQueries.forEach(query => {
@@ -30,13 +32,11 @@ function runMigrations() {
       } else {
         completed++;
       }
-
       if (completed === alterQueries.length) {
         console.log("✅  Database migrations completed successfully!");
       }
     });
   });
-
   if (hasFailed) {
     setTimeout(runMigrations, 5000);
   }
@@ -57,6 +57,26 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+const reportStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "uploads"));
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = "Report-" + Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+const uploadReport = multer({ storage: reportStorage });
+app.post("/api/reports/save", uploadReport.single("report"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No report file uploaded" });
+  }
+  res.status(200).json({ 
+    success: true, 
+    message: "Report saved successfully to server",
+    fileUrl: `http://localhost:5000/uploads/${req.file.filename}`
+  });
+});
 app.get("/", (req, res) => {
   res.send("Backend Running Successfully");
 });
@@ -97,46 +117,48 @@ app.post("/api/auth/register", upload.single("profileImage"), (req, res) => {
   } else if (password !== confirmPassword) {
     errors.confirmPassword = "Passwords do not match.";
   }
-
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ success: false, errors });
   }
-  const sql = `
-    INSERT INTO users
-    (full_name, username, email, phone, gender, dob, password, profile_image)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-  db.query(
-    sql,
-    [fullName, username, email, phone, gender, dob, password, profileImage],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          if (err.message.includes("username")) {
-            return res.status(400).json({ success: false, errors: { username: "Username already taken." } });
+  bcrypt.hash(password, 10, (hashErr, hashedPassword) => {
+    if (hashErr) return res.status(500).json({ success: false, message: "Registration Failed" });
+    const sql = `
+      INSERT INTO users
+      (full_name, username, email, phone, gender, dob, password, profile_image)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    db.query(
+      sql,
+      [fullName, username, email, phone, gender, dob, hashedPassword, profileImage],
+      (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") {
+            if (err.message.includes("username")) {
+              return res.status(400).json({ success: false, errors: { username: "Username already taken." } });
+            }
+            if (err.message.includes("email")) {
+              return res.status(400).json({ success: false, errors: { email: "Email already registered." } });
+            }
           }
-          if (err.message.includes("email")) {
-            return res.status(400).json({ success: false, errors: { email: "Email already registered." } });
-          }
+          console.log(err);
+          return res.status(500).json({ success: false, message: "Registration Failed" });
         }
-        console.log(err);
-        return res.status(500).json({ success: false, message: "Registration Failed" });
+        res.status(201).json({
+          success: true,
+          message: "Registration Successful",
+          user: {
+            id: result.insertId,
+            fullName,
+            username,
+            email,
+            phone,
+            gender,
+            dob,
+            profileImage: profileImage ? `http://localhost:5000/uploads/${profileImage}` : null,
+          },
+        });
       }
-      res.status(201).json({
-        success: true,
-        message: "Registration Successful",
-        user: {
-          id: result.insertId,
-          fullName,
-          username,
-          email,
-          phone,
-          gender,
-          dob,
-          profileImage: profileImage ? `http://localhost:5000/uploads/${profileImage}` : null,
-        },
-      });
-    }
-  );
+    );
+  });
 });
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
@@ -150,19 +172,21 @@ app.post("/api/auth/login", (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
     const user = results[0];
-    if (user.password !== password) {
-      return res.status(401).json({ success: false, message: "Invalid email or password" });
-    }
-    res.status(200).json({
-      success: true,
-      message: "Login Successful",
-      user: {
-        id: user.id,
-        fullName: user.full_name,
-        username: user.username,
-        email: user.email,
-        profileImage: user.profile_image ? `http://localhost:5000/uploads/${user.profile_image}` : null,
+    bcrypt.compare(password, user.password, (compareErr, isMatch) => {
+      if (compareErr || !isMatch) {
+        return res.status(401).json({ success: false, message: "Invalid email or password" });
       }
+      res.status(200).json({
+        success: true,
+        message: "Login Successful",
+        user: {
+          id: user.id,
+          fullName: user.full_name,
+          username: user.username,
+          email: user.email,
+          profileImage: user.profile_image ? `http://localhost:5000/uploads/${user.profile_image}` : null,
+        }
+      });
     });
   });
 });
@@ -191,12 +215,13 @@ app.get("/api/users", (req, res) => {
     res.status(200).json({ success: true, users });
   });
 });
-app.post("/api/users/create-user", (req, res) => {
+app.post("/api/users/create-user", upload.single("profileImage"), (req, res) => {
   const { fullName, email, phone, department, role, status, password, address } = req.body;
+  const profileImage = req.file ? req.file.filename : null;
   const sql = `
-    INSERT INTO users (full_name, username, email, phone, department, role, status, password, address)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) `;
-  db.query(sql, [fullName, email, email, phone, department, role, status || "Active", password, address], (err, result) => {
+    INSERT INTO users (full_name, username, email, phone, department, role, status, password, address, profile_image)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `;
+  db.query(sql, [fullName, email, email, phone, department, role, status || "Active", password, address, profileImage], (err, result) => {
     if (err) {
       console.log("Error creating user:", err);
       return res.status(500).json({ success: false, message: "Failed to create user" });
@@ -204,14 +229,23 @@ app.post("/api/users/create-user", (req, res) => {
     res.status(201).json({ success: true, message: "User created successfully" });
   });
 });
-app.put("/api/users/:id", (req, res) => {
+app.put("/api/users/:id", upload.single("profileImage"), (req, res) => {
   const { id } = req.params;
-  const { fullName, email, phone, department, role, status, address } = req.body;
-  const sql = `
-    UPDATE users SET 
-      full_name=?, email=?, phone=?, department=?, role=?, status=?, address=?
-    WHERE id=?`;
-  db.query(sql, [fullName, email, phone, department, role, status, address, id], (err, result) => {
+  const { fullName, email, phone, department, role, status, address, password, gender, dob } = req.body;
+  const profileImage = req.file ? req.file.filename : null;
+  let fields = "full_name=?, email=?, phone=?, department=?, role=?, status=?, address=?, gender=?, dob=?";
+  let params = [fullName, email, phone, department || "", role || "", status || "Active", address, gender || "", dob || null];
+  if (password && password.trim() !== "") {
+    fields += ", password=?";
+    params.push(password);
+  }
+  if (profileImage) {
+    fields += ", profile_image=?";
+    params.push(profileImage);
+  }
+  params.push(id);
+  const sql = `UPDATE users SET ${fields} WHERE id=?`;
+  db.query(sql, params, (err, result) => {
     if (err) {
       console.log("Error updating user:", err);
       return res.status(500).json({ success: false, message: "Failed to update user" });
@@ -331,6 +365,7 @@ app.post("/api/products", upload.single("image"), (req, res) => {
     productName, description, sku, brand, category, subCategory,
     basePrice, discountPrice, stockQuantity, isActive, isFeatured,
     weight, length, width, height, baseColor, metaTitle, metaDescription,
+    variants, tags
   } = req.body;
   const image = req.file ? req.file.filename : null;
   const isActiveBool = isActive === "true" || isActive === "on" || isActive === true;
@@ -339,14 +374,16 @@ app.post("/api/products", upload.single("image"), (req, res) => {
     INSERT INTO products (
       product_name, description, sku, brand, category, sub_category,
       base_price, discount_price, stock_quantity, is_active, is_featured,
-      weight, length, width, height, base_color, meta_title, meta_description, image
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `;
+      weight, length, width, height, base_color, meta_title, meta_description, image,
+      variants, tags
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) `;
   db.query(
     sql,
     [
       productName, description, sku, brand, category, subCategory,
       basePrice || 0, discountPrice || 0, stockQuantity || 0, isActiveBool, isFeaturedBool,
       weight || 0, length || 0, width || 0, height || 0, baseColor, metaTitle, metaDescription, image,
+      variants, tags
     ],
     (err, result) => {
       if (err) {
@@ -358,8 +395,34 @@ app.post("/api/products", upload.single("image"), (req, res) => {
   );
 });
 app.get("/api/products", (req, res) => {
-  const sql = "SELECT * FROM products ORDER BY id DESC";
-  db.query(sql, (err, results) => {
+  const { minPrice, maxPrice, brands, categories } = req.query;
+  let sql = "SELECT * FROM products WHERE 1=1";
+  const params = [];
+
+  if (minPrice) {
+    sql += " AND base_price >= ?";
+    params.push(Number(minPrice));
+  }
+  if (maxPrice) {
+    sql += " AND base_price <= ?";
+    params.push(Number(maxPrice));
+  }
+  if (brands) {
+    const brandArray = brands.split(",").map(b => b.trim()).filter(Boolean);
+    if (brandArray.length > 0) {
+      sql += " AND brand IN (?)";
+      params.push(brandArray);
+    }
+  }
+  if (categories) {
+    const catArray = categories.split(",").map(c => c.trim()).filter(Boolean);
+    if (catArray.length > 0) {
+      sql += " AND category IN (?)";
+      params.push(catArray);
+    }
+  }
+  sql += " ORDER BY id DESC";
+  db.query(sql, params, (err, results) => {
     if (err) {
       console.log("Products fetch error:", err);
       return res.status(500).json({ success: false, message: "Products fetch failed" });
@@ -373,10 +436,11 @@ app.put("/api/products/:id", upload.single("image"), (req, res) => {
     productName, description, sku, brand, category, subCategory,
     basePrice, discountPrice, stockQuantity, isActive, isFeatured,
     weight, length, width, height, baseColor, metaTitle, metaDescription,
+    variants, tags
   } = req.body;
   const image = req.file ? req.file.filename : null;
-  const isActiveBool = isActive === "true" || isActive === "on" || isActive === true;
-  const isFeaturedBool = isFeatured === "true" || isFeatured === "on" || isFeatured === true;
+  const isActiveBool = isActive === "true" || isActive === "on" || isActive === true || isActive === 1 || isActive === "1";
+  const isFeaturedBool = isFeatured === "true" || isFeatured === "on" || isFeatured === true || isFeatured === 1 || isFeatured === "1";
   let sql = "";
   let params = [];
   if (image) {
@@ -384,24 +448,28 @@ app.put("/api/products/:id", upload.single("image"), (req, res) => {
       UPDATE products SET 
         product_name=?, description=?, sku=?, brand=?, category=?, sub_category=?,
         base_price=?, discount_price=?, stock_quantity=?, is_active=?, is_featured=?,
-        weight=?, length=?, width=?, height=?, base_color=?, meta_title=?, meta_description=?, image=?
+        weight=?, length=?, width=?, height=?, base_color=?, meta_title=?, meta_description=?, image=?,
+        variants=?, tags=?
       WHERE id=?`;
     params = [
       productName, description, sku, brand, category, subCategory,
       basePrice || 0, discountPrice || 0, stockQuantity || 0, isActiveBool, isFeaturedBool,
-      weight || 0, length || 0, width || 0, height || 0, baseColor, metaTitle, metaDescription, image, id,
+      weight || 0, length || 0, width || 0, height || 0, baseColor, metaTitle, metaDescription, image,
+      variants, tags, id,
     ];
   } else {
     sql = `
       UPDATE products SET 
         product_name=?, description=?, sku=?, brand=?, category=?, sub_category=?,
         base_price=?, discount_price=?, stock_quantity=?, is_active=?, is_featured=?,
-        weight=?, length=?, width=?, height=?, base_color=?, meta_title=?, meta_description=?
+        weight=?, length=?, width=?, height=?, base_color=?, meta_title=?, meta_description=?,
+        variants=?, tags=?
       WHERE id=?`;
     params = [
       productName, description, sku, brand, category, subCategory,
       basePrice || 0, discountPrice || 0, stockQuantity || 0, isActiveBool, isFeaturedBool,
-      weight || 0, length || 0, width || 0, height || 0, baseColor, metaTitle, metaDescription, id,
+      weight || 0, length || 0, width || 0, height || 0, baseColor, metaTitle, metaDescription,
+      variants, tags, id,
     ];
   }
   db.query(sql, params, (err, result) => {
@@ -512,18 +580,15 @@ app.post("/api/orders", (req, res) => {
     discount_amount,
     shipping_method
   } = req.body;
-
   if (!customer_name || !email || !total_amount) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
-
   const sql = `
     INSERT INTO orders (
       customer_name, email, phone, address, city, state, pincode,
       total_amount, items, payment_method, card_number, expiry_date, cvv,
       estimated_tax, discount_code, discount_amount, shipping_method
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
   db.query(
     sql,
     [
@@ -716,14 +781,12 @@ app.get("/api/report/recent", (req, res) => {
       items
     FROM orders
     ORDER BY id DESC
-    LIMIT 5
-  `;
+    LIMIT 5`;
   db.query(sql, (err, results) => {
     if (err) {
       console.log("Recent report fetch error:", err);
       return res.status(500).json({ success: false, message: "Failed to fetch recent reports" });
     }
-
     const data = (results || []).map((o) => ({
       id: `#REP-${o.id}`,
       customer: o.customer_name,
@@ -733,11 +796,9 @@ app.get("/api/report/recent", (req, res) => {
       payment_method: o.payment_method || "unknown",
       items: o.items || ""
     }));
-
     res.json({ success: true, recentReports: data });
   });
 });
-
 app.get("/api/report/cards", (req, res) => {
   const data = { totalRevenue: "₹0", totalOrders: 0, activeUsers: 0, monthlyGrowth: "0%" };
   db.query("SELECT SUM(total_amount) as sum FROM orders", (err, result) => {
@@ -778,6 +839,22 @@ app.get("/api/support/cards", (req, res) => {
     });
   });
 });
+app.get("/api/dashboard/cards", (req, res) => {
+  const data = { totalOrders: 0, totalRevenue: 0, totalProducts: 0, activeUsers: 0 };
+  db.query("SELECT COUNT(*) as count FROM orders", (err, r1) => {
+    if (!err && r1[0]) data.totalOrders = r1[0].count;
+    db.query("SELECT SUM(total_amount) as sum FROM orders", (err, r2) => {
+      if (!err && r2[0]) data.totalRevenue = r2[0].sum || 0;
+      db.query("SELECT COUNT(*) as count FROM products", (err, r3) => {
+        if (!err && r3[0]) data.totalProducts = r3[0].count;
+        db.query("SELECT COUNT(*) as count FROM users WHERE status = 'Active' OR status IS NULL", (err, r4) => {
+          if (!err && r4[0]) data.activeUsers = r4[0].count;
+          res.status(200).json(data);
+        });
+      });
+    });
+  });
+});
 app.get("/api/support/tickets", (req, res) => {
   const sql = "SELECT * FROM enquiries ORDER BY id DESC LIMIT 10";
   db.query(sql, (err, results) => {
@@ -787,9 +864,13 @@ app.get("/api/support/tickets", (req, res) => {
     const tickets = results.map(e => ({
       id: e.id,
       name: e.full_name || "Unknown",
+      email: e.email || "",
+      phone: e.phone || "",
       subject: e.subject || "General Inquiry",
+      message: e.message || "",
       priority: e.priority || "Medium",
       status: e.status || "Pending",
+      created_at: e.created_at,
     }));
     res.status(200).json(tickets);
   });
@@ -822,12 +903,13 @@ app.delete("/api/orders/:id", (req, res) => {
 });
 app.put("/api/enquiries/:id", (req, res) => {
   const { id } = req.params;
-  const { subject, message, priority, status } = req.body;
+  const { name, full_name, email, phone, subject, message, priority, status } = req.body;
+  const clientName = full_name || name || "";
   const sql = `
     UPDATE enquiries SET 
-      subject=?, message=?, priority=?, status=?
+      full_name=?, email=?, phone=?, subject=?, message=?, priority=?, status=?
     WHERE id=?`;
-  db.query(sql, [subject, message, priority, status, id], (err, result) => {
+  db.query(sql, [clientName, email, phone, subject, message, priority, status, id], (err, result) => {
     if (err) {
       console.log("Enquiry update error:", err);
       return res.status(500).json({ success: false, message: "Failed to update enquiry" });
@@ -846,19 +928,142 @@ app.delete("/api/enquiries/:id", (req, res) => {
     res.status(200).json({ success: true, message: "Enquiry deleted successfully" });
   });
 });
-app.put("/api/categories/:id", (req, res) => {
+app.put("/api/categories/:id", upload.single("image"), (req, res) => {
   const { id } = req.params;
-  const { category_name, slug, description, status } = req.body;
-  const sql = `
-    UPDATE categories SET 
-      category_name=?, slug=?, description=?, status=?
-    WHERE id=?`;
-  db.query(sql, [category_name, slug, description, status, id], (err, result) => {
+  const { category_name, slug, description, status, stats, created_at } = req.body;
+  const image = req.file ? req.file.filename : null;
+  let sql, params;
+  if (image) {
+    sql = `UPDATE categories SET category_name=?, slug=?, description=?, status=?, image=? WHERE id=?`;
+    params = [category_name, slug || "", description || "", status || "Active", image, id];
+  } else {
+    sql = `UPDATE categories SET category_name=?, slug=?, description=?, status=? WHERE id=?`;
+    params = [category_name, slug || "", description || "", status || "Active", id];
+  }
+  db.query(sql, params, (err, result) => {
     if (err) {
       console.log("Category update error:", err);
       return res.status(500).json({ success: false, message: "Failed to update category" });
     }
     res.status(200).json({ success: true, message: "Category updated successfully" });
+  });
+});
+const ensureBrandsTable = (cb) => {
+  const sql = `CREATE TABLE IF NOT EXISTS brands (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    brand_name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255),
+    description TEXT,
+    image VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Active',
+    website VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`;
+  db.query(sql, cb);
+};
+app.get("/api/brands", (req, res) => {
+  ensureBrandsTable(() => {
+    db.query("SELECT * FROM brands ORDER BY id DESC", (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: "Brands fetch failed" });
+      res.status(200).json({ success: true, brands: results });
+    });
+  });
+});
+app.post("/api/brands", upload.single("image"), (req, res) => {
+  ensureBrandsTable(() => {
+    const { brand_name, slug, description, status, website } = req.body;
+    const image = req.file ? req.file.filename : null;
+    if (!brand_name) return res.status(400).json({ success: false, message: "Brand name required" });
+    db.query(
+      "INSERT INTO brands (brand_name, slug, description, image, status, website) VALUES (?, ?, ?, ?, ?, ?)",
+      [brand_name, slug || "", description || "", image, status || "Active", website || ""],
+      (err, result) => {
+        if (err) { console.log("Brand insert error:", err); return res.status(500).json({ success: false, message: "Failed to add brand" }); }
+        res.status(201).json({ success: true, message: "Brand added successfully", id: result.insertId });
+      }
+    );
+  });
+});
+app.put("/api/brands/:id", upload.single("image"), (req, res) => {
+  ensureBrandsTable(() => {
+    const { id } = req.params;
+    const { brand_name, slug, description, status, website } = req.body;
+    const image = req.file ? req.file.filename : null;
+    let sql, params;
+    if (image) {
+      sql = "UPDATE brands SET brand_name=?, slug=?, description=?, image=?, status=?, website=? WHERE id=?";
+      params = [brand_name, slug || "", description || "", image, status || "Active", website || "", id];
+    } else {
+      sql = "UPDATE brands SET brand_name=?, slug=?, description=?, status=?, website=? WHERE id=?";
+      params = [brand_name, slug || "", description || "", status || "Active", website || "", id];
+    }
+    db.query(sql, params, (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to update brand" });
+      res.status(200).json({ success: true, message: "Brand updated successfully" });
+    });
+  });
+});
+app.delete("/api/brands/:id", (req, res) => {
+  ensureBrandsTable(() => {
+    db.query("DELETE FROM brands WHERE id = ?", [req.params.id], (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Delete failed" });
+      res.status(200).json({ success: true, message: "Brand deleted successfully" });
+    });
+  });
+});
+const ensureFeaturesTable = (cb) => {
+  const sql = `CREATE TABLE IF NOT EXISTS product_features (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    feature_name VARCHAR(255) NOT NULL,
+    feature_value VARCHAR(255),
+    product_id INT,
+    category VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`;
+  db.query(sql, cb);
+};
+app.get("/api/features", (req, res) => {
+  ensureFeaturesTable(() => {
+    db.query("SELECT * FROM product_features ORDER BY id DESC", (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: "Features fetch failed" });
+      res.status(200).json({ success: true, features: results });
+    });
+  });
+});
+app.post("/api/features", (req, res) => {
+  ensureFeaturesTable(() => {
+    const { feature_name, feature_value, product_id, category } = req.body;
+    if (!feature_name) return res.status(400).json({ success: false, message: "Feature name required" });
+    db.query(
+      "INSERT INTO product_features (feature_name, feature_value, product_id, category) VALUES (?, ?, ?, ?)",
+      [feature_name, feature_value || "", product_id || null, category || ""],
+      (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: "Failed to add feature" });
+        res.status(201).json({ success: true, message: "Feature added successfully", id: result.insertId });
+      }
+    );
+  });
+});
+app.put("/api/features/:id", (req, res) => {
+  ensureFeaturesTable(() => {
+    const { id } = req.params;
+    const { feature_name, feature_value, category } = req.body;
+    db.query(
+      "UPDATE product_features SET feature_name=?, feature_value=?, category=? WHERE id=?",
+      [feature_name, feature_value || "", category || "", id],
+      (err) => {
+        if (err) return res.status(500).json({ success: false, message: "Failed to update feature" });
+        res.status(200).json({ success: true, message: "Feature updated successfully" });
+      }
+    );
+  });
+});
+app.delete("/api/features/:id", (req, res) => {
+  ensureFeaturesTable(() => {
+    db.query("DELETE FROM product_features WHERE id = ?", [req.params.id], (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Delete failed" });
+      res.status(200).json({ success: true, message: "Feature deleted successfully" });
+    });
   });
 });
 app.get("/api/activities", (req, res) => {
@@ -1063,6 +1268,186 @@ app.get("/api/revenue-graph", (req, res) => {
     (results || []).forEach(r => { months[r.month - 1] = Number(r.revenue) || 0; });
     res.json({ success: true, data: months });
   });
+});
+
+const fs = require('fs');
+const settingsPath = path.join(__dirname, 'settings.json');
+app.get("/api/settings", (req, res) => {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      res.json({ success: true, settings: data });
+    } else {
+      res.json({ success: true, settings: {} });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to load settings" });
+  }
+});
+app.post("/api/settings", (req, res) => {
+  try {
+    fs.writeFileSync(settingsPath, JSON.stringify(req.body.settings || {}, null, 2));
+    res.json({ success: true, message: "Settings saved" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to save settings" });
+  }
+});
+app.post("/api/products/:id/rate", (req, res) => {
+  const { id } = req.params;
+  const { rating } = req.body;
+  if (!rating) return res.status(400).json({ success: false, message: "Rating is required" });
+  
+  db.query("SELECT rating FROM products WHERE id = ?", [id], (err, results) => {
+    if (err) return res.status(500).json({ success: false });
+    if (!results.length) return res.status(404).json({ success: false, message: "Product not found" });
+    let currentRating = parseFloat(results[0].rating || "0");
+    let newRating = currentRating === 0 ? parseFloat(rating) : ((currentRating + parseFloat(rating)) / 2).toFixed(2);
+    
+    db.query("UPDATE products SET rating = ? WHERE id = ?", [newRating, id], (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to update rating" });
+      res.json({ success: true, message: "Rating updated", newRating });
+    });
+  });
+});
+const ensureSettingsTables = async () => {
+  await db.promise().query(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      setting_key VARCHAR(100) NOT NULL UNIQUE,
+      setting_value TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) `);
+  await db.promise().query(`
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      device_info VARCHAR(255),
+      browser VARCHAR(100),
+      ip_address VARCHAR(50),
+      is_current TINYINT(1) DEFAULT 0,
+      logged_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )  `);};
+app.get("/api/settings", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const [rows] = await db.promise().query("SELECT setting_key, setting_value FROM admin_settings");
+    const settings = {};
+    rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
+    res.json({ success: true, settings }); } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to load settings" });
+  }});
+app.post("/api/settings", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const { settings } = req.body;
+    for (const [key, value] of Object.entries(settings || {})) {
+      await db.promise().query(
+        `INSERT INTO admin_settings (setting_key, setting_value) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+        [key, value]  ); }
+    res.json({ success: true, message: "Settings saved" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to save settings" });
+  }});
+app.put("/api/settings/password", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const { currentPassword, newPassword } = req.body;
+    const [rows] = await db.promise().query(
+      "SELECT setting_value FROM admin_settings WHERE setting_key = 'password'"
+    );
+    const stored = rows.length > 0 ? rows[0].setting_value : "admin123";
+    if (stored !== currentPassword) {
+      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+    }
+    const [emailRows] = await db.promise().query(
+      "SELECT setting_value FROM admin_settings WHERE setting_key = 'email'"
+    );
+    const email = emailRows.length > 0 ? emailRows[0].setting_value : "admin@example.com";
+    const [userRows] = await db.promise().query(
+      "SELECT * FROM users WHERE email = ? OR role = 'Admin' ORDER BY id ASC LIMIT 1",
+      [email]
+    );
+    if (userRows.length > 0) {
+      const adminUser = userRows[0];
+      await db.promise().query(
+        "UPDATE users SET password = ? WHERE id = ?",
+        [newPassword, adminUser.id]
+      );
+    }
+    await db.promise().query(
+      `INSERT INTO admin_settings (setting_key, setting_value) VALUES ('password', ?)
+       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+      [newPassword]
+    );
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to update password" });
+  }
+});
+app.post("/api/settings/devices/signout", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const { device_info, browser } = req.body;
+    await db.promise().query(
+      "DELETE FROM admin_sessions WHERE device_info = ? AND browser = ? AND is_current = 1",
+      [device_info, browser]
+    );
+    res.json({ success: true, message: "Logged out successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to sign out current device" });
+  }
+});
+app.get("/api/settings/devices", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const [rows] = await db.promise().query(
+      "SELECT * FROM admin_sessions ORDER BY is_current DESC, logged_in_at DESC"
+    );
+    res.json({ success: true, devices: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to load devices" });
+  }
+});
+app.post("/api/settings/devices", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    const { device_info, browser, ip_address } = req.body;
+    await db.promise().query("UPDATE admin_sessions SET is_current = 0");
+    const [existing] = await db.promise().query(
+      "SELECT id FROM admin_sessions WHERE device_info = ? AND browser = ?",
+      [device_info, browser]
+    );
+    if (existing.length > 0) {
+      await db.promise().query(
+        "UPDATE admin_sessions SET is_current = 1, logged_in_at = NOW(), ip_address = ? WHERE id = ?",
+        [ip_address, existing[0].id]
+      );
+    } else {
+      await db.promise().query(
+        "INSERT INTO admin_sessions (device_info, browser, ip_address, is_current) VALUES (?, ?, ?, 1)",
+        [device_info, browser, ip_address]
+      );
+    }
+    res.json({ success: true, message: "Device registered" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to register device" });
+  }
+});
+app.delete("/api/settings/devices/others", async (req, res) => {
+  try {
+    await ensureSettingsTables();
+    await db.promise().query("DELETE FROM admin_sessions WHERE is_current = 0");
+    res.json({ success: true, message: "Signed out all other devices" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to sign out devices" });
+  }
 });
 app.listen(PORT, () => {
   console.log(`Server Running On Port ${PORT}`);

@@ -21,144 +21,136 @@ import watchIcon from "../assets/wristwatch.png";
 import laptopIcon from "../assets/laptop.png";
 import rightArrow from "../assets/right-arrow (1).png";
 const Categories =() =>{
-  const products =[
-    {
-      id: 1,
-      image: k3,
-      category: "Watches",
-      name :"Regency Gold Chronograph",
-      price: "₹89,999",
-       badge: "NEW ARRIVAL",
-    },
-    {
-      id : 2,
-      image: purse,
-      category :"Bags",
-      name:"Midnight Suede Clutch",
-      price:"₹52,000",
-    },
-    {
-      id: 3,
-      image:c2 ,
-      category:"ACCESSORIES",
-      name:"Versatile Silk Scarf",
-      price:"₹24,000",
-      badge: "Sale",
-    },
-    {
-      id: 4,
-      image: bag,
-      category:"BAGS",
-      name:"Premium Tote Bag",
-      price:"₹32,000",
-    },
-    {
-      id: 5,
-      image :earrings,
-      category : "JEWELRY",
-      name :"Aura Crystal Earrings",
-      price : "₹49,000",
-      badge:"NEW ARRIVAL",
-    },
-    {
-      id:6,
-      image : shoes,
-      category: "SHOES",
-      name:"Empire Leather Loafers",
-       price: "₹54,999",
-    },
-  ];
-const [categories,setCategories] = useState([]);
-const [activePage, setActivePage] = useState(1);
-const [showcase, setShowcase] = useState([]);
-const [wishlistedIds, setWishlistedIds] = useState(() => {
-  const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-  const ids = {};
-  wishlist.forEach((item) => {
-    if (item && item.id) ids[item.id] = true;
-  });
-  return ids;
-});
-useEffect(() => {
-  fetchCategories();
-}, []);
-
-const fetchCategories = async () => {
-  try {
-    const res = await fetch(
-      "http://localhost:5000/api/categories"
+  const [categories,setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [activePage, setActivePage] = useState(1);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [maxPriceFilter, setMaxPriceFilter] = useState(200000);
+  const [wishlistedIds, setWishlistedIds] = useState({});
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategories, selectedBrands, maxPriceFilter]);
+  useEffect(() => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    const ids = {};
+    wishlist.forEach((item) => {
+      if (item && item.id) {
+        ids[item.id] = true;
+      } else if (item && item.name) {
+        const match = products.find(p => p.product_name === item.name);
+        if (match) ids[match.id] = true;
+      }
+    });
+    setWishlistedIds(ids);
+  }, [products]);
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/categories"
+      );
+      const data = await res.json();
+      console.log("API Response:", data);
+      setCategories(
+        Array.isArray(data)
+          ? data
+          : data.categories || []
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const fetchProducts = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append("minPrice", 0);
+      queryParams.append("maxPrice", maxPriceFilter);
+      if (selectedBrands.length > 0) {
+        queryParams.append("brands", selectedBrands.join(","));
+      }
+      if (selectedCategories.length > 0) {
+        queryParams.append("categories", selectedCategories.join(","));
+      }
+      const res = await fetch(`http://localhost:5000/api/products?${queryParams.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products || []);
+      }
+    } catch (error) {
+      console.log("Error fetching products:", error);
+    }
+  };
+  const handleBrandChange = (brandName) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brandName) ? prev.filter((b) => b !== brandName) : [...prev, brandName]
     );
-
-    const data = await res.json();
-    console.log("API Response:", data);
-    setCategories(
-      Array.isArray(data)
-        ? data
-        : data.categories || []
+  };
+  const handleCategoryChange = (catName) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catName) ? prev.filter((c) => c !== catName) : [...prev, catName]
     );
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const handleWishlist = (e, item) => {
-  e.stopPropagation();
-
-  const wishlist =
-    JSON.parse(localStorage.getItem("wishlist")) || [];
-
-  const exists = wishlist.find(
-    (p) => p.id === item.id
-  );
-
-  if (exists) {
-    const updatedWishlist = wishlist.filter(
-      (p) => p.id !== item.id
+  };
+  const handleClearAll = () => {
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setMaxPriceFilter(200000);
+  };
+  const handleWishlist = (e, item) => {
+    e.stopPropagation();
+    const wishlist =
+      JSON.parse(localStorage.getItem("wishlist")) || [];
+    const exists = wishlist.find(
+      (p) => p.id === item.id || p.name === item.product_name
     );
-
-    localStorage.setItem(
-      "wishlist",
-      JSON.stringify(updatedWishlist)
-    );
-
-    setWishlistedIds((prev) => ({
-      ...prev,
-      [item.id]: false,
-    }));
-  } else {
-    const newItem = {
-      id: item.id,
-      image: `http://localhost:5000/uploads/${item.image}`,
-      name: item.category_name,
-      category: "Category",
-      price: "₹1,450",
-    };
-
-    localStorage.setItem(
-      "wishlist",
-      JSON.stringify([...wishlist, newItem])
-    );
-
-    setWishlistedIds((prev) => ({
-      ...prev,
-      [item.id]: true,
-    }));
-  }
-  window.dispatchEvent(
-    new Event("wishlistUpdated")
-  );
-};
+    if (exists) {
+      const updatedWishlist = wishlist.filter(
+        (p) => p.id !== item.id && p.name !== item.product_name
+      );
+      localStorage.setItem(
+        "wishlist",
+        JSON.stringify(updatedWishlist)
+      );
+      setWishlistedIds((prev) => ({
+        ...prev,
+        [item.id]: false,
+      })); } else {
+      const newItem = {
+        id: item.id,
+        image: item.image ? `http://localhost:5000/uploads/${item.image}` : `https://via.placeholder.com/300?text=No+Image`,
+        name: item.product_name,
+        category: item.category || "Product",
+        price: `₹${Number(item.base_price || 0).toLocaleString()}`,
+      };
+      localStorage.setItem(
+        "wishlist",
+        JSON.stringify([...wishlist, newItem])
+      );
+      setWishlistedIds((prev) => ({
+        ...prev,
+        [item.id]: true,
+      })); }
+    window.dispatchEvent(
+      new Event("wishlistUpdated") );};
+  const brandsList = [
+    "Aura Private Label",
+    "Vincenzo & Co.",
+    "Lumina Paris",
+    "Ethereal Swiss",
+    "Marquis London" ];
   return(
     <>
     <Navbar/>
-    <div className ="bg-[#f5f5fa] min-h-screen py-8 px-4">
+    <div className ="bg-[#f5f5fa] dark:bg-gray-900 min-h-screen py-8 px-4 text-gray-800 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <div className="relative overflow-hidden rounded-3xl h-[220px] md:h-[320px]">
           <img src= {cloths}alt="Luxury Collection" className="w-full h-full object-cover"/>
           <div className="absolute left-6 md:left-12 top-1/2 -translate-y-1/2 text-white max-w-md">
             <span className="bg-white text-black top-7 px-3 py-1 rounded-full text-xs font-semibold">   Curated Selection</span>
-            <h1 className="mt-3 text-3xl md:text-6xl font-bold leading-none"> Luxury <br/>
-            <span className="text-black italic">  Essentials</span></h1>
+            <h1 className="mt-3 text-3xl md:text-6xl font-bold leading-none text-white"> Luxury <br/>
+            <span className="text-black italic dark:text-amber-100">  Essentials</span></h1>
             <p className="mt-3 text-sm  md:text-base"> Explore our artisan-crafted collection designed
                   for the modern lifestyle.</p>
             <div className="flex gap-3 mt-4">
@@ -170,79 +162,70 @@ const handleWishlist = (e, item) => {
       </div>
       <div className ="max-w-7xl mx-auto mt-8">
               <div className="flex flex-col lg:flex-row gap-6">
-              <div className = "w-full lg:w-72 bg-white rounded-2xl p-5 shadow-sm ">
+              <div className = "w-full lg:w-72 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border dark:border-gray-700">
                 <div className ="flex items-center justify-between  mb-6">
                   <div className="flex items-center gap-2">
-                    <img src ={filterIcon} alt="" className="w-4 h-4"></img>
-                    <h3 className ="font-semibold">Filter By</h3>
+                    <img src ={filterIcon} alt="" className="w-4 h-4 dark:invert"></img>
+                    <h3 className ="font-semibold dark:text-white">Filter By</h3>
                   </div>
-                  <button className="text-xs text-gray-500">Clear All</button>
+                  <button onClick={handleClearAll} className="text-xs text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">Clear All</button>
                 </div>
                 {/*Categories*/}
-                <div className ="border-b pb-4 mb-4">
+                <div className ="border-b dark:border-gray-700 pb-4 mb-4">
                   < div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm  font-bold ">Categories</h4>
-                  <img src={downArrow} alt="" className="W-3 h-3"/>
+                  <h4 className="text-sm  font-bold dark:text-white">Categories</h4>
+                  <img src={downArrow} alt="" className="W-3 h-3 dark:invert"/>
                   </div>
-               <div className="space-y-2 text-sm text-gray-600">
+               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 {categories.map((item) => (
                <label  key={item.id}
-               className="flex items-center gap-2" >
-                <input type="checkbox" />
+               className="flex items-center gap-2 cursor-pointer" >
+                <input  type="checkbox"  checked={selectedCategories.includes(item.category_name)}
+                  onChange={() => handleCategoryChange(item.category_name)} className="accent-[#6f4e37]" />
              {item.category_name}
               </label> ))}
                    </div>
-                                </div>
-                        <div className="border-b pb-4 mb-4">
+                       </div>
+                        <div className="border-b dark:border-gray-700 pb-4 mb-4">
                           <div className="flex items-center justify-between mb-4">
-                            <h4 className=" text-sm font-medium">Price Range</h4>
-                            <img src={downArrow} alt="" className="w-3 h-3"/>
+                            <h4 className=" text-sm font-medium dark:text-white">Price Range</h4>
+                            <img src={downArrow} alt="" className="w-3 h-3 dark:invert"/>
                           </div>
-                          <input type="range" min ="50" max ="200" className="w-full accent-[#6f4e37]"/>
+                          <input   type="range"  min="0"  max="200000"  step="1000" value={maxPriceFilter}
+                            onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
+                            className="w-full accent-[#6f4e37]" />
                           <div className="flex gap-3 mt-4">
                             <div>
-                              <p className="text-[10px] text-gray-600 mb-1"> MIN </p>
+                              <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-1"> MIN </p>
                               <input type="text" value="₹0" readOnly 
-                              className="w-20 border rounded px-2 py-1 text-sm"/>
+                              className="w-20 border dark:border-gray-600 rounded px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white"/>
                             </div>
                             <div>
-                              <p className="text-[10px] text-gray-500 mb-1">Max</p>
-                              <input type="text" value="₹200"  readOnly className="w-20 border rounded px-2 py-1 text-sm"/>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Max</p>
+                              <input type="text" value={`₹${maxPriceFilter.toLocaleString()}`} readOnly className="w-20 border dark:border-gray-600 rounded px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white"/>
                             </div>
                            </div>
                             </div>
                              {/* Featured Brands */}
-                            <div className="border-b pb-4 mb-4">
+                            <div className="border-b dark:border-gray-700 pb-4 mb-4">
                               <div className="flex items-center  justify-between mb-3">
-                                <h4 className="text-sm  font-semibold">Featured Brands</h4>
-                                <img src ={downArrow} alt="" className="w-3 h-3"/>
+                                <h4 className="text-sm  font-semibold dark:text-white">Featured Brands</h4>
+                                <img src ={downArrow} alt="" className="w-3 h-3 dark:invert"/>
                               </div>
-                              <div className="space-y-2 text-sm  text-gray-600">
-                                <label className="flex items-center gap-2" >
-                                  <input type="checkbox"/>
-                                      Aura Private Label
-                                </label>
-                                <label className="flex items-center gap-2">
-                                  <input type ="checkbox"/>
-                                   Vincenzo & Co.
-                                </label>
-                                <label className=" flex items-center gap-2">
-                                  <input type ="checkbox"/>Lumina Paris
-                                </label>
-                                <label className="flex items-center gap-2">
-                                  <input type="checkbox"/>
-                                   Ethereal Swiss
-                                </label>
-                                <label className="flex items-center gap-2" >
-                                  <input type ="checkbox"/>
-                                  Marquis London
-                                </label>
+                              <div className="space-y-2 text-sm  text-gray-600 dark:text-gray-300">
+                                {brandsList.map((brand) => (
+                                  <label key={brand} className="flex items-center gap-2 cursor-pointer">
+                                    <input  type="checkbox"  checked={selectedBrands.includes(brand)}
+                                      onChange={() => handleBrandChange(brand)}
+                                      className="accent-[#6f4e37]" />
+                                    {brand}
+                                  </label> ))}
                               </div>
                             </div>
-                            <div className="border-b pb-4  mb-6">
+                            <div className="border-b dark:border-gray-700 pb-4  mb-6">
                               <div className="flex items-center justify-between" >
-                                <h4 className="text-sm  font-medium"> Colour Palette</h4>
-                                <img  src={downArrow} alt="" className=" w-3 h-3"/>
+                                <h4 className="text-sm  font-medium dark:text-white"> Colour Palette</h4>
+                                <img  src={downArrow} alt="" className=" w-3 h-3 dark:invert"/>
                               </div>
                             </div>
                             <div  className=" bg-[#6f4e37] border border-black rounded-2xl p-4">
@@ -253,23 +236,23 @@ const handleWishlist = (e, item) => {
                              </div>
                      <div className="flex-1">
                       <div className="flex items-center justify-between mb-6">
-                       <p className="text-sm text-gray-500">
-                         Showing 1-12 of 48 exquisite items
+                       <p className="text-sm text-gray-500 dark:text-gray-400">
+                         Showing 1-{products.length} of {products.length} exquisite items
                           </p>
                 <div className="flex items-center gap-2">
                  <span className="text-xs text-gray-500">SORT BY</span>
-                       <button className="border rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                       <button className="border dark:border-gray-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2 bg-white dark:bg-gray-800">
                      Most Coveted
-                     <img src={downArrow} alt="" className="w-3 h-3" />
+                     <img src={downArrow} alt="" className="w-3 h-3 dark:invert" />
                </button>
                  </div>
                   </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {categories.map((item) => (
-             <div key={item.id}
-  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition">
+                {products.map((item) => (
+              <div key={item.id}
+  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border dark:border-gray-700">
   <div className="relative">
-    <img src={`http://localhost:5000/uploads/${item.image}`} alt={item.category_name}
+    <img src={item.image ? `http://localhost:5000/uploads/${item.image}` : `https://via.placeholder.com/300?text=No+Image`} alt={item.product_name}
       className="w-full h-64 object-cover" />
     <button onClick={(e) => handleWishlist(e, item)}
       className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:scale-110 transition" >
@@ -282,7 +265,7 @@ const handleWishlist = (e, item) => {
     <button 
       onClick={() => {
         const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
-        cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.category_name, tag: "Category", price: "₹1,450" });
+        cartItems.push({ img: item.image ? `http://localhost:5000/uploads/${item.image}` : `https://via.placeholder.com/300?text=No+Image`, title: item.product_name, tag: item.category || "Product", price: `₹${Number(item.base_price || 0).toLocaleString()}` });
         localStorage.setItem("cart", JSON.stringify(cartItems));
         window.location.href = "/cart"; }}
       className="absolute top-3 right-12 bg-white rounded-full p-2 shadow hover:bg-gray-100 transition">
@@ -291,15 +274,18 @@ const handleWishlist = (e, item) => {
   </div>
   <div className="p-4">
     <p className="text-[10px] tracking-wider text-gray-500 uppercase">
-      CATEGORY
+      {item.category || "Product"}
     </p>
-    <h3 className="mt-1 font-medium text-gray-800">
-      {item.category_name}
+    <h3 className="mt-1 font-medium text-gray-800 dark:text-gray-100">
+      {item.product_name}
     </h3>
+    <p className="text-sm font-bold text-gray-900 dark:text-white mt-2">
+      ₹{Number(item.base_price || 0).toLocaleString()}
+    </p>
     <button 
       onClick={() => {
         const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
-        cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.category_name, tag: "Category", price: "₹1,450" });
+        cartItems.push({ img: item.image ? `http://localhost:5000/uploads/${item.image}` : `https://via.placeholder.com/300?text=No+Image`, title: item.product_name, tag: item.category || "Product", price: `₹${Number(item.base_price || 0).toLocaleString()}` });
         localStorage.setItem("cart", JSON.stringify(cartItems));
         window.location.href = "/cart";
       }}
@@ -313,22 +299,19 @@ const handleWishlist = (e, item) => {
                         </div>                
                            </div>
           <div className="flex justify-center items-center gap-3 mt-10">
-              <button className="border px-4 py-2 rounded-lg text-gray-500">
+              <button className="border dark:border-gray-700 px-4 py-2 rounded-lg text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800">
                Prev
               </button>
            {[1, 2, 3, 4, 5].map((page) => (
-    <button
-      key={page}
-      onClick={() => setActivePage(page)}
-      className={`w-10 h-10 rounded-lg transition
+         <button key={page} onClick={() => setActivePage(page)} className={`w-10 h-10 rounded-lg transition
         ${
           activePage === page
             ? "bg-[#6f4e37] text-white shadow-lg"
-            : "bg-white text-gray-700 border"
+            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border dark:border-gray-700"
         }`} >
       {page}
     </button>))}
-  <button className="border px-4 py-2 rounded-lg text-gray-700">
+  <button className="border dark:border-gray-700 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800">
     Next
   </button>
 </div>  
@@ -339,4 +322,4 @@ const handleWishlist = (e, item) => {
        </>
   )
 }
-export default Categories;  
+export default Categories;

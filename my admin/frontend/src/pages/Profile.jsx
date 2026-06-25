@@ -15,7 +15,18 @@ import verifiedIcon from "../assets/verified.png";
 import showIcon from "../assets/show.png";
 const Profile = ({ darkMode }) => {
   const [adminUser, setAdminUser] = useState(null);
+  const [adminSettings, setAdminSettings] = useState({});
+  const [activities, setActivities] = useState([]);
+
   useEffect(() => {
+    fetch("http://localhost:5000/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings) {
+          setAdminSettings(data.settings);
+        }
+      })
+      .catch(err => console.log(err));
     fetch("http://localhost:5000/api/users")
       .then(res => res.json())
       .then(data => {
@@ -24,13 +35,21 @@ const Profile = ({ darkMode }) => {
         }
       })
       .catch(err => console.log(err));
+    fetch("http://localhost:5000/api/activities")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setActivities(data);
+      })
+      .catch(err => console.log(err));
   }, []);
-  const name = adminUser ? adminUser.fullName : "Cassandra Elara Vane";
-  const email = adminUser ? adminUser.email : "cassandra.vane@astrozura.com";
-  const phone = adminUser ? adminUser.phone : "+1 (555) 782-9012";
-  const dob = adminUser ? new Date(adminUser.dob).toLocaleDateString() : "May 24, 1988";
-  const gender = adminUser ? adminUser.gender : "Female";
+
+  const name = adminSettings.fullName || (adminUser ? adminUser.fullName : "Admin");
+  const email = adminSettings.email || (adminUser ? adminUser.email : "admin@example.com");
+  const phone = adminSettings.phone || (adminUser ? adminUser.phone : "N/A");
+  const dob = adminUser ? new Date(adminUser.dob).toLocaleDateString() : "N/A";
+  const gender = adminUser ? adminUser.gender : "N/A";
   const image = adminUser && adminUser.profileImage ? `http://localhost:5000/uploads/${adminUser.profileImage}` : profileImg;
+
   return (
     <div
       className={`p-3 sm:p-4 md:p-6 lg:p-8 min-h-screen
@@ -44,9 +63,6 @@ const Profile = ({ darkMode }) => {
               <h1 className="text-2xl md:text-3xl font-bold text-[#1d1d1d]">
               {name}
               </h1>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white text-gray-700">
-                Administrator
-              </span>
             </div>
             <div className="flex flex-wrap gap-5 mt-4 text-sm text-gray-700">
               <div className="flex items-center gap-2">
@@ -254,28 +270,24 @@ const Profile = ({ darkMode }) => {
               </p>
             </div>
           </div>
-          <div className="space-y-6">
-            {[
-              "Profile avatar updated",
-              "Logged in via Chrome",
-              "Two-Factor Auth verified",
-              "Changed contact number",
-              "Failed login attempt",
-              "Dashboard report generated",
-              "Admin permissions reviewed",
-            ].map((item, index) => (
-              <div key={index} className="flex gap-3">
-                <img src={clockIcon} alt="" className="w-5 h-5 mt-1" />
-                <div>
-                  <h3 className="font-medium text-sm">
-                    {item}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Just now
-                  </p>
+          <div className="space-y-5">
+            {activities.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No recent activity</p>
+            ) : (
+              activities.slice(0, 7).map((act, index) => (
+                <div key={index} className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#6f4e37]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <img src={clockIcon} alt="" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm">
+                      <span className="font-bold">{act.name}</span> {act.text}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">{act.time}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <button className="mt-8 flex items-center justify-center gap-3 bg-[#6f4e37] text-white px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all duration-300 mx-auto">
             <img src={showIcon} alt="" className="w-4 h-4 brightness-0 invert" />

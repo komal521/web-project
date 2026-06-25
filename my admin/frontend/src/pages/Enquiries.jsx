@@ -12,7 +12,9 @@ import informationIcon from "../assets/information.png";
 import pencilIcon from "../assets/pencil (1).png";
 import binIcon from "../assets/bin (1).png";
 import showIcon from "../assets/show.png";
-const Enquiries = ({ darkMode }) => {
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+const Enquiries = ({ darkMode, setActive, setEditData }) => {
   const defaultCards = [
     { title: "TOTAL ENQUIRIES", value: "00", growth: "+12.5%", icon: boxIcon, bg: "from-[#C8A25A] to-[#8B6A45]", iconBg: "bg-[#1b1b1b]", growthColor: "text-[#1d1d1d]" },
     { title: "PENDING", value: "00", growth: "-2.4%", icon: clockIcon, bg: "from-[#f8eee4] to-[#d58a43]", iconBg: "bg-white", growthColor: "text-red-500" },
@@ -87,6 +89,58 @@ const Enquiries = ({ darkMode }) => {
       alert("Error updating enquiry");
     }
   };
+
+  const handleExportPDF = () => {
+    if (enquiries.length === 0) {
+      alert("No data available to download");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Enquiries Full History Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}  |  Total Enquiries: ${enquiries.length}`, 14, 26);
+    const tableColumn = ["Name", "Email", "Phone", "Subject", "Priority", "Status", "Date"];
+    const tableRows = [];
+    enquiries.forEach(e => {
+      tableRows.push([
+        e.name,
+        e.email,
+        e.phone,
+        e.subject,
+        e.priority,
+        e.status,
+        e.date
+      ]);
+    });
+    
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 32,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+    
+    const fileName = `Enquiries_Full_History_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
+  };
+
   const enquiries = dbEnquiries.map((e) => ({
     raw: e,
     id: e.id,
@@ -149,7 +203,7 @@ const Enquiries = ({ darkMode }) => {
     <img src={filterIcon} alt="" className="w-4 h-4" />
     <span className="font-medium text-yellow-900 text-sm">Filter</span>
   </button>
-  <button onClick={() => setActiveBtn("export")}
+  <button onClick={handleExportPDF}
     className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-300">
     <img src={downloadIcon} alt="" className="w-4 h-4" />
     <span className="font-medium text-yellow-900 text-sm">Export</span>
@@ -223,6 +277,7 @@ const Enquiries = ({ darkMode }) => {
               <thead>
                 <tr className="text-left text-xs text-gray-500 border-b">
                   <th className="py-4">CUSTOMER</th>
+                  <th>EMAIL</th>
                   <th>PHONE NUMBER</th>
                   <th>SUBJECT</th>
                   <th>PRIORITY</th>
@@ -249,10 +304,10 @@ const Enquiries = ({ darkMode }) => {
                           </div>
                           <div>
                             <h4 className="font-medium text-sm">{item.name}</h4>
-                            <p className="text-xs text-gray-500">{item.email}</p>
                           </div>
                         </div>
                       </td>
+                      <td className="text-sm">{item.email}</td>
                       <td className="text-sm">{item.phone}</td>
                       <td className="text-sm max-w-[180px] truncate">{item.subject}</td>
                       <td>
@@ -271,15 +326,15 @@ const Enquiries = ({ darkMode }) => {
                           <button
                             onClick={() => setViewEnquiry(item)}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 transition-all"
-                            title="View"
-                          >
+                            title="View"  >
                             <img src={showIcon} alt="View" className="w-4 h-4 opacity-80" />
                           </button>
-                          <button
-                            onClick={() => setEditEnquiry(item.raw)}
+                          <button  onClick={() => {
+                              setEditData(item.raw);
+                              setActive("Edit Enquiry");
+                            }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-50 hover:bg-amber-100 transition-all"
-                            title="Edit"
-                          >
+                            title="Edit" >
                             <img src={pencilIcon} alt="Edit" className="w-4 h-4 opacity-80" />
                           </button>
                           <button
@@ -308,8 +363,7 @@ const Enquiries = ({ darkMode }) => {
     ${
       darkMode
         ? "bg-[#1e1e1e] border-[#2c2c2c] text-white"
-        : "bg-white border-[#ececec] text-[#222]"
-    }`} >
+        : "bg-white border-[#ececec] text-[#222]" }`} >
     Previous
   </button>
   <button
@@ -398,62 +452,6 @@ const Enquiries = ({ darkMode }) => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-      {editEnquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <form onSubmit={handleEditEnquirySubmit} className={`w-full max-w-md rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button type="button" onClick={() => setEditEnquiry(null)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl">
-              x
-            </button>
-            <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Edit Enquiry #{editEnquiry.id}</h2>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Subject</label>
-                <input  type="text"  required  value={editEnquiry.subject || ""}
-                  onChange={(e) => setEditEnquiry({ ...editEnquiry, subject: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6f4e37]" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Message</label>
-                <textarea value={editEnquiry.message || ""}
-                  onChange={(e) => setEditEnquiry({ ...editEnquiry, message: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6f4e37] h-24" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Priority</label>
-                  <select
-                    value={editEnquiry.priority || "Medium"}
-                    onChange={(e) => setEditEnquiry({ ...editEnquiry, priority: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6f4e37] bg-white" >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Status</label>
-                  <select
-                    value={editEnquiry.status || "Pending"}
-                    onChange={(e) => setEditEnquiry({ ...editEnquiry, status: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6f4e37] bg-white">
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex justify-end gap-3">
-              <button type="button" onClick={() => setEditEnquiry(null)} className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">
-                Cancel
-              </button>
-              <button type="submit" className="px-6 py-2 rounded-xl bg-[#6f4e37] text-white font-semibold hover:opacity-90">
-                Save Changes
-              </button>
-            </div>
-          </form>
         </div>
       )}
     </div>

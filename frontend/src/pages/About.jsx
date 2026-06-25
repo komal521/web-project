@@ -66,13 +66,13 @@ const leaders = [
   return (
     <>
       <Navbar />
-      <div className="bg-[#f8f5f2] min-h-screen">
+      <div className="bg-[#f8f5f2] dark:bg-gray-900 min-h-screen transition-colors duration-300">
         <section className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
           <div className="bg-gradient-to-r from-[#5a3d2b] via-[#6f4e37] to-[#b78457] rounded-3xl p-6 md:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-xl">
             <div className="text-white max-w-xl">
               <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
                 Crafting Premium Digital
-                <span className="text-black">
+                <span className="text-black dark:text-amber-100">
                   {" "}Experiences
                 </span>
               </h1>
@@ -84,10 +84,10 @@ const leaders = [
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => (window.location.href = "/services")}
-                  className="bg-white text-black px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
+                  className="bg-white dark:bg-gray-800 text-black dark:text-white px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
                   Explore Products
                 </button>
-                <button className="bg-white text-[#6f4e37] px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
+                <button className="bg-white dark:bg-gray-800 text-[#6f4e37] dark:text-[#d7a53f] px-6 py-3 rounded-full font-semibold hover:scale-105 transition">
                   Our Legacy
                 </button>
               </div>
@@ -105,44 +105,44 @@ const leaders = [
                 className="w-full h-[300px] md:h-[500px] object-cover rounded-2xl shadow-lg" />
             </div>
             <div>
-              <span className="text-[#6f4e37] font-semibold uppercase tracking-wider">
+              <span className="text-[#6f4e37] dark:text-[#d7a53f] font-semibold uppercase tracking-wider">
                 About Us </span>
-              <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mt-3 mb-6">
+              <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mt-3 mb-6">
                 Our Story
               </h2>
-              <p className="text-gray-600 text-base md:text-lg mb-4">
+              <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg mb-4">
                 The journey of a thousand miles began with a
                 single stitch of perfection. We started with
                 a vision to bring premium quality products and
                 unforgettable experiences to our customers.
               </p>
-              <p className="text-gray-600 text-base md:text-lg mb-8">
+              <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg mb-8">
                 Founded in the heart of innovation, our brand
                 continues to evolve while staying true to our
                 values of excellence, craftsmanship, and trust.
               </p>
               <div className="flex flex-wrap gap-8 md:gap-12">
                 <div>
-                  <h3 className="text-4xl font-bold text-[#6f4e37]">
+                  <h3 className="text-4xl font-bold text-[#6f4e37] dark:text-[#d7a53f]">
                     28+
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     Years Experience
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-4xl font-bold text-[#6f4e37]">
+                  <h3 className="text-4xl font-bold text-[#6f4e37] dark:text-[#d7a53f]">
                     50K+
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     Happy Customers
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-4xl font-bold text-[#6f4e37]">
+                  <h3 className="text-4xl font-bold text-[#6f4e37] dark:text-[#d7a53f]">
                     Global
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     Presence
                   </p>
                 </div>
@@ -151,11 +151,11 @@ const leaders = [
           </div>
         </section>
       </div>
-<section className="bg-[#f3f3f3] py-12 md:py-16">
+<section className="bg-[#f3f3f3] dark:bg-gray-800 transition-colors duration-300 py-12 md:py-16">
   <div className="max-w-7xl mx-auto px-4 md:px-6">
     <div className="grid md:grid-cols-2 gap-6 mb-12">
-      <div className="bg-[#6f4e37] border border-gray-300 rounded-lg p-6 shadow-sm">
-        <div className="w-12 h-12 bg-[#6f4e37] rounded-lg flex items-center justify-center mb-4">
+      <div className="bg-[#6f4e37] dark:bg-[#5a3d2b] border border-gray-300 dark:border-gray-600 rounded-lg p-6 shadow-sm">
+        <div className="w-12 h-12 bg-[#6f4e37] dark:bg-[#4a2d1b] rounded-lg flex items-center justify-center mb-4">
           <img src={targetIcon} alt="" className="w-6 h-6" />
         </div>
         <h3 className="text-2xl font-bold text-[#ffffff] mb-3">
@@ -167,8 +167,8 @@ const leaders = [
           empowered and distinguished by their choices.
         </p>
       </div>
-      <div className="bg-[#6f4e37] border border-gray-300 rounded-lg p-6 shadow-sm">
-        <div className="w-12 h-12rounded-lg flex items-center justify-center mb-4">
+      <div className="bg-[#6f4e37] dark:bg-[#5a3d2b] border border-gray-300 dark:border-gray-600 rounded-lg p-6 shadow-sm">
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4">
           <img src={visionIcon} alt="" className="w-6 h-6" />
         </div>
         <h3 className="text-2xl font-bold text-[#ffffff] mb-3">
@@ -181,11 +181,11 @@ const leaders = [
         </p>
       </div>
     </div>
-    <div className="bg-white rounded-xl p-6 md:p-10 shadow-sm">
-      <h2 className="text-3xl md:text-5xl font-bold text-center text-black mb-4">
+    <div className="bg-white dark:bg-gray-700 dark:border-gray-600 rounded-xl p-6 md:p-10 shadow-sm border">
+      <h2 className="text-3xl md:text-5xl font-bold text-center text-black dark:text-white mb-4">
         Why Choose Aura Digital
       </h2>
-      <p className="text-center text-[#6f4e37] text-base md:text-lg mb-10 max-w-4xl mx-auto">
+      <p className="text-center text-[#6f4e37] dark:text-[#d7a53f] text-base md:text-lg mb-10 max-w-4xl mx-auto">
         We combine artistic intuition with data-driven strategy
         to deliver results that exceed expectations.
       </p>
@@ -197,7 +197,7 @@ const leaders = [
       className={`p-5 rounded-lg cursor-pointer transition-all duration-300 ${
         activeCard === index
           ? "bg-[#6f4e37]"
-          : "bg-white border" }`}>
+          : "bg-white dark:bg-gray-800 border dark:border-gray-600 hover:border-gray-400" }`}>
       <div
         className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${
           activeCard === index
@@ -207,12 +207,12 @@ const leaders = [
       </div>
       <h4 className={`font-bold mb-2 ${   activeCard === index
             ? "text-white"
-            : "text-black"  }`}>
+            : "text-black dark:text-white"  }`}>
         {card.title}
       </h4>
       <p className={`text-sm ${   activeCard === index
             ? "text-white"
-            : "text-gray-600"  }`} >
+            : "text-gray-600 dark:text-gray-400"  }`} >
         {card.description}
       </p>
     </div>
@@ -220,12 +220,12 @@ const leaders = [
 </div></div>
   </div>
 </section>
-<section className="py-14 bg-[#f8f5f2]">
+<section className="py-14 bg-[#f8f5f2] dark:bg-gray-900 transition-colors duration-300">
   <div className="max-w-7xl mx-auto px-4 md:px-6">
-    <h2 className="text-3xl md:text-5xl font-bold text-center text-black mb-3">
+    <h2 className="text-3xl md:text-5xl font-bold text-center text-black dark:text-white mb-3">
       Meet the Leadership
     </h2>
-    <p className="text-center text-gray-600 max-w-3xl mx-auto mb-10">
+    <p className="text-center text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-10">
       The visionaries steering Aura Digital toward the next frontier
       of digital innovation.
     </p>
@@ -237,7 +237,7 @@ const leaders = [
       className={`rounded-xl p-6 text-center cursor-pointer transition-all duration-300 ${
         activeLeader === index
           ? "bg-[#6f4e37] text-white shadow-lg"
-          : "bg-white border shadow-sm hover:shadow-lg"
+          : "bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:shadow-lg"
       }`} >
       <img  src={leader.img}  alt=""
         className={`w-24 h-24 rounded-full object-cover mx-auto mb-4 ${
@@ -245,20 +245,20 @@ const leaders = [
             ? "border-4 border-white"
             : ""
         }`} />
-      <h3 className="text-xl font-bold">
+      <h3 className={`text-xl font-bold ${activeLeader === index ? "text-white" : "text-black dark:text-white"}`}>
         {leader.name}
       </h3>
       <p className={`text-sm font-semibold mb-3 ${
           activeLeader === index
-            ? "text-black"
-            : "text-[#6f4e37]"
+            ? "text-amber-100"
+            : "text-[#6f4e37] dark:text-[#d7a53f]"
         }`}  >
         {leader.role}
       </p>
       <p  className={`text-sm mb-4 ${
           activeLeader === index
             ? "text-gray-200"
-            : "text-gray-600"
+            : "text-gray-600 dark:text-gray-400"
         }`}>
         {leader.desc}
       </p>
@@ -271,9 +271,9 @@ const leaders = [
 </div>
   </div>
 </section>
-<section className="py-14 bg-[#f8f5f2]">
+<section className="py-14 bg-[#f8f5f2] dark:bg-gray-900 transition-colors duration-300">
   <div className="max-w-7xl mx-auto px-4 md:px-6">
-      <div className="bg-black rounded-3xl p-8 md:p-14 text-center text-white">
+      <div className="bg-black dark:bg-gray-800 rounded-3xl p-8 md:p-14 text-center text-white border dark:border-gray-700">
       	<h2 className="text-3xl md:text-5xl font-bold mb-5">
         Join Our Shopping Journey
       </h2>
@@ -284,7 +284,7 @@ const leaders = [
       </p>
       <button
         onClick={() => (window.location.href = "/categories")}
-        className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition" >
+        className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 hover:bg-gray-200 transition" >
         Shop Now
       </button>
     </div>

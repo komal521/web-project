@@ -67,7 +67,7 @@ const handleWishlist = (e, item) => {
   } else {
     const newItem = {
       id: item.id,
-      image: `http://localhost:5000/uploads/${item.image}`,
+      image: item.image ? `http://localhost:5000/uploads/${item.image}` : b1,
       name: item.product_name,
       category: "Service",
       price: `₹${item.base_price}`,
@@ -91,39 +91,37 @@ const handleWishlist = (e, item) => {
   return (
     <>
       <Navbar />
-      <div className="bg-[#faf8f6] min-h-screen">
+      <div className="bg-[#faf8f6] dark:bg-gray-900 text-gray-850 dark:text-gray-100 transition-colors duration-300 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 py-14">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold">
+            <h1 className="text-4xl md:text-5xl font-bold dark:text-white">
               Our <span className="text-[#6f4e37] italic">Spiritual Services</span>
             </h1>
-            <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
+            <p className="text-gray-500 dark:text-gray-400 mt-4 max-w-2xl mx-auto">
               Experience divine blessings through our trusted puja and
               spiritual services performed by certified priests.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-5 max-w-lg mx-auto mt-10 text-center">
             <div>
-              <h3 className="font-bold text-xl">15K+</h3>
-              <p className="text-gray-500 text-sm">Bookings</p>
+              <h3 className="font-bold text-xl dark:text-white">15K+</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Bookings</p>
             </div>
             <div>
-              <h3 className="font-bold text-xl">4.9/5</h3>
-              <p className="text-gray-500 text-sm">Ratings</p>
+              <h3 className="font-bold text-xl dark:text-white">4.9/5</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ratings</p>
             </div>
             <div>
-              <h3 className="font-bold text-xl">50+</h3>
-              <p className="text-gray-500 text-sm">Services</p>
+              <h3 className="font-bold text-xl dark:text-white">50+</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Services</p>
             </div>
           </div>
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
           {services.map((item, index) => (
   <div  key={index}  onClick={() => navigate("/product")}
-    className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
-  >
+    className="bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col" >
 <div className="relative">
-  <img
-    src={`http://localhost:5000/uploads/${item.image}`}
+  <img  src={item.image ? `http://localhost:5000/uploads/${item.image}` : b1}
     alt={item.product_name}
     className="w-full h-52 sm:h-56 md:h-60 object-cover" />
 <button
@@ -140,14 +138,44 @@ const handleWishlist = (e, item) => {
 </button>
 </div>
     <div className="p-5 flex flex-col flex-1">
-      <div className="flex items-center gap-1 mb-3">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <img key={s} src={star} alt="" className="w-4 h-4"  /> ))}
-      </div>
-      <h3 className="font-bold text-lg text-gray-900">
+      {item.rating && parseFloat(item.rating) > 0 ? (
+        <div className="flex items-center gap-1 mb-3">
+          {[1, 2, 3, 4, 5].map((s) => {
+            const rVal = parseFloat(item.rating);
+            const isFilled = s <= Math.round(rVal);
+            return (
+              <img key={s} src={star} alt="star" className={`w-4 h-4 object-contain ${isFilled ? "" : "opacity-30"}`} />
+            );
+          })}
+          <span className="text-gray-500 dark:text-gray-400 text-xs ml-1 font-semibold">({item.rating})</span>
+        </div>
+      ) : (
+        <div className="mb-3">
+          <span className="text-gray-400 dark:text-gray-500 text-xs italic">not rating yet</span>
+        </div>
+      )}
+      <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">
         {item.product_name}
       </h3>
-      <p className="text-gray-500 text-sm leading-6 mt-2 flex-1">
+      {item.variants && (() => {
+        try {
+          const parsed = JSON.parse(item.variants);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return (
+              <div className="mt-2 flex gap-1 flex-wrap max-h-12 overflow-hidden">
+                {parsed.map((v, i) => (
+                  <span key={i} className="flex items-center text-[10px] bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-600">
+                    {v.colour && <span className="inline-block w-2 h-2 rounded-full mr-1 border border-gray-300" style={{backgroundColor: v.colour}}></span>}
+                    {v.name || v.size || "Variant"}
+                  </span>
+                ))}
+              </div>
+            );
+          }
+        } catch(e) {}
+        return null;
+      })()}
+      <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 mt-2 flex-1">
        {item.description}
       </p>
       <p className="text-[#6f4e37] font-bold text-xl mt-4">
@@ -156,7 +184,7 @@ const handleWishlist = (e, item) => {
       <button   onClick={(e) => {
           e.stopPropagation();
           const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
-          cartItems.push({ img: `http://localhost:5000/uploads/${item.image}`, title: item.product_name, price: `₹${item.base_price}`, tag: "Service" });
+          cartItems.push({ img: item.image ? `http://localhost:5000/uploads/${item.image}` : b1, title: item.product_name, price: `₹${item.base_price}`, tag: "Service" });
           localStorage.setItem("cart", JSON.stringify(cartItems));
           navigate("/cart");
         }}
@@ -169,39 +197,39 @@ const handleWishlist = (e, item) => {
 ))}
           </div>
           <div className="flex justify-center mt-10">
-            <button className="border border-amber-300 text-[#6f4e37] px-6 py-3 rounded-full flex items-center gap-2 hover:bg-amber-50">
+            <button className="border border-[#6f4e37] text-[#6f4e37] px-6 py-3 rounded-full flex items-center gap-2 hover:bg-amber-50 dark:hover:bg-gray-800 transition">
               Explore More Services
               <img src={arrow} alt=""  className="w-4 h-4"/>
             </button>
           </div>
         </div>
-        <div className="bg-white py-16">
+        <div className="bg-white dark:bg-gray-850 py-16">
           <div className="max-w-6xl mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
                 <img src={verified} alt="" className="w-14 mx-auto" />
-                <h3 className="font-bold mt-4">
+                <h3 className="font-bold mt-4 dark:text-white">
                   Certified Priests
                 </h3>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                   Experienced and verified priests.
                 </p>
               </div>
               <div className="text-center">
                 <img   src={checked}   alt=""   className="w-14 mx-auto" />
-                <h3 className="font-bold mt-4">
+                <h3 className="font-bold mt-4 dark:text-white">
                   Divine Timings
                 </h3>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                   Auspicious muhurat guidance.
                 </p>
               </div>
               <div className="text-center">
                 <img src={appointment}  alt=""  className="w-14 mx-auto"/>
-                <h3 className="font-bold mt-4">
+                <h3 className="font-bold mt-4 dark:text-white">
                   Flexible Booking
                 </h3>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                   Easy scheduling for your puja.
                 </p>
               </div>
@@ -210,40 +238,40 @@ const handleWishlist = (e, item) => {
         </div>
         <div className="py-16">
           <div className="max-w-5xl mx-auto px-4">
-            <h2 className="text-center text-3xl font-bold mb-10">
+            <h2 className="text-center text-3xl font-bold mb-10 dark:text-white">
               What Devotees Say
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl p-6 shadow">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow">
                 <div className="flex gap-1 mb-3">
                   {[1,2,3,4,5].map((s)=>(
                     <img key={s} src={star} alt="" className="w-4 h-4"  />
                   ))}
                 </div>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   The priest was highly knowledgeable and the entire
                   ceremony was conducted perfectly.
                 </p>
                 <div className="flex items-center gap-3 mt-5">
                   <img src={b2} alt="" className="w-12 h-12 rounded-full object-cover" />
-                  <h4 className="font-semibold">
+                  <h4 className="font-semibold dark:text-white">
                     Ramesh Kumar
                   </h4>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl p-6 shadow">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow">
                 <div className="flex gap-1 mb-3">
                   {[1,2,3,4,5].map((s)=>(
                     <img   key={s}   src={star} alt="" className="w-4 h-4" />
                   ))}
                 </div>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Excellent service. Booking process was smooth and
                   the puja experience was wonderful.
                 </p>
                 <div className="flex items-center gap-3 mt-5">
                   <img src={b4} alt="" className="w-12 h-12 rounded-full object-cover"/>
-                  <h4 className="font-semibold">
+                  <h4 className="font-semibold dark:text-white">
                     Anita Sharma
                   </h4>
                 </div>

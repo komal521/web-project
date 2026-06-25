@@ -208,7 +208,7 @@ const handleSubmit = async () => {
                 </div>
                 <button  onClick={() => setFeatured(!featured)}
                   className={`relative h-7 w-14 rounded-full transition-all duration-300 ${
-                    featured ? "bg-[#d58a2f]" : "bg-gray-300"
+                    featured ? "bg-[#8b5e34]" : "bg-gray-300"
                   }`} >
                   <div
                     className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${
@@ -228,7 +228,7 @@ const handleSubmit = async () => {
                 </span>
                 <button onClick={() => setSitemap(!sitemap)}
                   className={`relative h-7 w-14 rounded-full transition-all duration-300 ${
-                    sitemap ? "bg-[#d58a2f]" : "bg-gray-300"
+                    sitemap ? "bg-[#8b5e34]" : "bg-gray-300"
                   }`}  >
                   <div
                     className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${
@@ -242,7 +242,7 @@ const handleSubmit = async () => {
                 </span>
                 <button  onClick={() => setGlobalSearch(!globalSearch)}
                   className={`relative h-7 w-14 rounded-full transition-all duration-300 ${
-                    globalSearch ? "bg-[#d58a2f]" : "bg-gray-300"
+                    globalSearch ? "bg-[#8b5e34]" : "bg-gray-300"
                   }`} >
                   <div
                     className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${
@@ -275,12 +275,12 @@ const handleSubmit = async () => {
               </div>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-end">
-              <button className="flex items-center justify-center gap-2 rounded-2xl bg-[#d68a2d] px-6 py-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#c77718]">
+              <button className="flex items-center justify-center gap-2 rounded-2xl bg-[#6f4e37] px-6 py-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#5c4033]">
                 <img src={closeIcon} alt=""
                   className="h-4 w-4 brightness-0 invert" />
                 Cancel Changes
               </button>
-              <button   onClick={handleSubmit} className="flex items-center justify-center gap-2 rounded-2xl bg-[#d67c1c] px-7 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#bb6910]">
+              <button   onClick={handleSubmit} className="flex items-center justify-center gap-2 rounded-2xl bg-[#5c4033] px-7 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#4a332a]">
                 <img  src={fileIcon}  alt=""
                   className="h-4 w-4 brightness-0 invert"  />
                 Publish Category

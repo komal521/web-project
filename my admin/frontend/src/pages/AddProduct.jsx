@@ -93,6 +93,24 @@ const SectionHeader = ({ icon, title, desc, darkMode = false }) => (
 const AddProduct = ({ darkMode, onBack, product }) => {
   const [isActive, setIsActive] = useState(product ? Boolean(product.is_active) : true);
   const [image, setImage] = useState(null);
+  const [variants, setVariants] = useState(() => {
+    try {
+      return product?.variants ? JSON.parse(product.variants) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showVariantForm, setShowVariantForm] = useState(false);
+  const [newVariant, setNewVariant] = useState({ name: "", colour: "", size: "", price: "" });
+  const [tags, setTags] = useState(() => {
+    try {
+      return product?.tags ? JSON.parse(product.tags) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [tagInput, setTagInput] = useState("");
+
   const fieldClass = darkMode
     ? "bg-[#1a2234] border-[#2b3548] text-white placeholder:text-gray-500"
     : "bg-white border-[#e7e2da] text-gray-700 placeholder:text-gray-400";
@@ -104,6 +122,8 @@ const AddProduct = ({ darkMode, onBack, product }) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     form.append("isActive", isActive);
+    form.append("variants", JSON.stringify(variants));
+    form.append("tags", JSON.stringify(tags));
     if (image) {
       form.append("image", image);
     }
@@ -263,15 +283,28 @@ const AddProduct = ({ darkMode, onBack, product }) => {
                     Product Tags
                   </label>
                   <div className={`flex min-h-12 flex-wrap items-center gap-2 rounded-2xl border px-3 py-2 ${fieldClass}`}>
-                    {["Luxury", "Limited Edition", "New Arrival"].map((tag) => (
-                      <span key={tag}
+                    {tags.map((tag, idx) => (
+                      <span key={idx}
                         className="flex items-center gap-2 rounded-full bg-[#eef2ff] px-3 py-1 text-xs font-semibold text-[#23417d]" >
                         {tag}
-                        <img src={closeIcon} alt="" className="h-3 w-3" />
+                        <img src={closeIcon} alt="Remove tag" className="h-3 w-3 cursor-pointer" onClick={() => setTags(tags.filter((_, i) => i !== idx))} />
                       </span>
                     ))}
                     <input type="text" placeholder="Add..."
-                      className="min-w-[80px] flex-1 bg-transparent text-sm outline-none"/>
+                      className="min-w-[80px] flex-1 bg-transparent text-sm outline-none"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const val = tagInput.trim();
+                          if (val && !tags.includes(val)) {
+                            setTags([...tags, val]);
+                            setTagInput("");
+                          }
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -279,36 +312,77 @@ const AddProduct = ({ darkMode, onBack, product }) => {
             <div className={`rounded-[24px] border p-4 sm:p-5 ${darkMode ? "border-[#2b3548]" : "border-[#f0dfbd]"}`}>
               <SectionHeader icon={menuIcon} title="Product Variants"
                 desc="Add multiple sizes, materials, or color options for this product." />
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto mb-4">
                 <table className="w-full min-w-[720px] overflow-hidden rounded-2xl text-sm">
                   <thead className="bg-[#faf7ef] text-left text-xs font-bold uppercase text-[#23417d]">
                     <tr>
-                      <th className="px-4 py-3">Option Name</th>
-                      <th className="px-4 py-3">SKU Suffix</th>
+                      <th className="px-4 py-3">Name</th>
+                      <th className="px-4 py-3">Colour</th>
+                      <th className="px-4 py-3">Size</th>
                       <th className="px-4 py-3">Additional Price</th>
-                      <th className="px-4 py-3">Stock</th>
+                      <th className="px-4 py-3">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      ["Classic Gold - Large", "CG-L", "+₹0.00", "25 units"],
-                      ["Royal Platinum - Small", "RP-S", "+₹450.00", "10 units"],
-                    ].map((row) => (
-                      <tr key={row[0]} className="border-b border-gray-100">
-                        {row.map((cell) => (
-                          <td key={cell} className="px-4 py-4 text-gray-700">
-                            {cell}
-                          </td>
-                        ))}
+                    {variants.map((v, idx) => (
+                      <tr key={idx} className="border-b border-gray-100">
+                        <td className="px-4 py-4 text-gray-700">{v.name || "-"}</td>
+                        <td className="px-4 py-4 text-gray-700">
+                          <div className="flex items-center gap-2">
+                            {v.colour && <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: v.colour }}></div>}
+                            {v.colour || "-"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-gray-700">{v.size || "-"}</td>
+                        <td className="px-4 py-4 text-gray-700">{v.price ? `+₹${v.price}` : "-"}</td>
+                        <td className="px-4 py-4">
+                          <button type="button" onClick={() => setVariants(variants.filter((_, i) => i !== idx))} className="text-red-500 font-bold hover:underline">Remove</button>
+                        </td>
                       </tr>
                     ))}
+                    {variants.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-4 text-center text-gray-500">No variants added yet.</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-              <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#f0dfbd] py-3 text-sm font-semibold text-[#d19b18]">
-                <img src={addIcon} alt="" className="h-4 w-4" />
-                Add New Variation
-              </button>
+              {showVariantForm ? (
+                <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-700 mb-1">Name (e.g. 18kt)</label>
+                    <input type="text" className={`p-2 rounded border ${fieldClass}`} value={newVariant.name} onChange={(e) => setNewVariant({...newVariant, name: e.target.value})} placeholder="Variant Name" />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-700 mb-1">Colour (e.g. Gold)</label>
+                    <input type="text" className={`p-2 rounded border ${fieldClass}`} value={newVariant.colour} onChange={(e) => setNewVariant({...newVariant, colour: e.target.value})} placeholder="Color name or hex" />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-700 mb-1">Size (e.g. 7)</label>
+                    <input type="text" className={`p-2 rounded border ${fieldClass}`} value={newVariant.size} onChange={(e) => setNewVariant({...newVariant, size: e.target.value})} placeholder="Ring size / Dimension" />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-gray-700 mb-1">Additional Price</label>
+                    <input type="number" className={`p-2 rounded border ${fieldClass}`} value={newVariant.price} onChange={(e) => setNewVariant({...newVariant, price: e.target.value})} placeholder="0.00" />
+                  </div>
+                  <div className="sm:col-span-4 flex justify-end gap-2 mt-2">
+                    <button type="button" onClick={() => setShowVariantForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-black">Cancel</button>
+                    <button type="button" onClick={() => {
+                      if(newVariant.name || newVariant.colour || newVariant.size) {
+                        setVariants([...variants, newVariant]);
+                        setNewVariant({ name: "", colour: "", size: "", price: "" });
+                        setShowVariantForm(false);
+                      }
+                    }} className="px-4 py-2 bg-[#d9a63d] text-white text-sm font-bold rounded-lg hover:bg-yellow-600">Save Variant</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowVariantForm(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#f0dfbd] py-3 text-sm font-semibold text-[#d19b18]">
+                  <img src={addIcon} alt="" className="h-4 w-4" />
+                  Add New Variation
+                </button>
+              )}
             </div>
             <div className="flex flex-col items-center justify-end gap-4 border-t border-gray-200 pt-6 sm:flex-row">
               <button

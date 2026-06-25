@@ -6,6 +6,7 @@ import arrowIcon from "../assets/right-arrow.png";
 import { useNavigate } from "react-router-dom";
 import sendIcon from "../assets/send.png";
 import { useState } from "react";
+import logo from "../assets/logo.png";
 const Footer = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -32,12 +33,12 @@ const Footer = () => {
     }
   };
   return (
-   <footer className="bg-[#6f4e37] border-t border-[#8b6b54]">    
+   <footer className="bg-[#725c4c] border-t border-[#725c4c]">    
       <div className="max-w-7xl mx-auto px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <h2 className="text-3xl font-bold text-black mb-4">
-              Lumina </h2>
+           <img src={logo} alt="Market Hub Logo"
+            className="w-[180px] h-[80px] object-contain mb-4"/>
             <p className="text-gray-200 leading-7 mb-6">
               Elevating your daily experience through carefully curated
               premium products and exceptional design. </p>
@@ -47,14 +48,12 @@ const Footer = () => {
                   <div  key={index}
                     className="w-10 h-10 rounded-full border border-amber-200 flex items-center justify-center cursor-pointer hover:bg-amber-50 transition">
                     <img src={icon} alt="" className="w-5 h-5 object-contain"  />
+                  </div> )  )}
                   </div>
-                )  )}
-            </div>
-          </div>
-          <div>
+                   </div>
+                    <div>
            <h3 className="text-xl font-semibold mb-5 text-black">
-              Quick Links
-            </h3>
+              Quick Links  </h3>
            <ul className="space-y-3 text-gray-200">
               <li onClick={() => navigate("/product")}
                className="hover:text-[#e9e2dd] cursor-pointer">
@@ -91,19 +90,12 @@ const Footer = () => {
               Get updates about new arrivals and exclusive offers.
             </p>
           <div className="flex border rounded-lg overflow-hidden bg-white">
-  <input
-    type="email"
-    placeholder="Enter your email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    className="flex-1 px-4 py-3 outline-none"
-  />
-<button
-  onClick={handleSubscribe}
-  className="bg-[#6f4e37] hover:bg-[#5a3d2b] w-12 h-12 flex items-center justify-center flex-shrink-0">
-  <img src={sendIcon} alt="send" className="w-5 h-5 brightness-0 invert mr-4"/>
-</button>
-</div>
+          <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)}
+            className="flex-1 px-4 py-3 outline-none" />
+     <button onClick={handleSubscribe}
+      className="bg-[#6f4e37] hover:bg-[#5a3d2b] w-12 h-12 flex items-center justify-center flex-shrink-0">
+     <img src={sendIcon} alt="send" className="w-5 h-5 brightness-0 invert mr-4"/>
+      </button> </div>
             {status && <p className="text-sm mt-2 text-[#6f4e37] font-semibold">{status}</p>}
             <div className="mt-6 text-white space-y-2">
               <p>support@lumina.com</p>
@@ -126,5 +118,4 @@ const Footer = () => {
     </footer>
   );
 };
-
 export default Footer;

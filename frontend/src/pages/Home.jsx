@@ -152,6 +152,7 @@ const fetchedFeaturedProducts = products.filter((p) => p.is_featured).slice(0, 4
   price: `₹${Number(p.base_price || 999).toFixed(2)}`,
   oldPrice: p.discount_price && p.discount_price > 0 ? `₹${Number(p.discount_price || 1299).toFixed(2)}` : "",
   discount: "",
+  rating: p.rating,
 }));
 let displayFeatured = [...fetchedFeaturedProducts];
 if (displayFeatured.length < 4) {
@@ -172,62 +173,62 @@ if (displayNewArrivals.length < 3) {
   return (
        <>
       <Navbar />
-    <section className="bg-[#f7f7f7] min-h-screen flex items-center">
+    <section className="bg-[#f7f7f7] dark:bg-gray-900 transition-colors duration-300 min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="bg-blue-100 text-black text-xs font-semibold px-4 py-2 rounded-full">
+            <span className="bg-blue-100 dark:bg-blue-900/40 text-black dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full">
               SPRING COLLECTION 2024
             </span>
-            <h1 className="mt-6 text-5xl lg:text-7xl font-bold leading-tight">
+            <h1 className="mt-6 text-5xl lg:text-7xl font-bold leading-tight dark:text-white">
               Refine Your
               <br />
-              <span className="text-[#6f4e37] italic">
+              <span className="text-[#6f4e37] dark:text-[#d7a53f] italic">
                 Aesthetic
               </span>
               <br />
               Every Day.
             </h1>
-            <p className="mt-6 text-gray-600 text-lg max-w-lg">
+            <p className="mt-6 text-gray-600 dark:text-gray-300 text-lg max-w-lg">
               Discover curated selections from the world's most innovative
               brands. Premium quality, sustainable materials and timeless
               design at your fingertips.
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
               <button onClick={() => (window.location.href = "/categories")}
-                className="bg-[#6f4e37] text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700">
+                className="bg-[#6f4e37] text-white px-7 py-4 rounded-full flex items-center gap-3 hover:bg-blue-700 dark:hover:bg-amber-700 transition">
                 Shop Now
                 <img src={arrowIcon} alt="" className="w-4 h-4 invert" />
               </button>
               <button onClick={() => (window.location.href = "/services")}
-                className="border border-gray-300 px-7 py-4 rounded-full hover:bg-white" >
+                className="border border-gray-300 dark:border-gray-600 dark:text-gray-200 px-7 py-4 rounded-full hover:bg-white dark:hover:bg-gray-800 transition" >
                 Explore Products
               </button>
             </div>
             <div className="flex flex-wrap gap-10 mt-12">
               <div>
-                <h3 className="text-3xl font-bold">15k+</h3>
-                <p className="text-gray-500">Premium Items</p>
+                <h3 className="text-3xl font-bold dark:text-white">15k+</h3>
+                <p className="text-gray-500 dark:text-gray-400">Premium Items</p>
               </div>
               <div>
-                <h3 className="text-3xl font-bold">98%</h3>
-                <p className="text-gray-500">Happy Customers</p>
+                <h3 className="text-3xl font-bold dark:text-white">98%</h3>
+                <p className="text-gray-500 dark:text-gray-400">Happy Customers</p>
               </div>
               <div>
-                <h3 className="text-3xl font-bold">24h</h3>
-                <p className="text-gray-500">Fast Delivery</p>
+                <h3 className="text-3xl font-bold dark:text-white">24h</h3>
+                <p className="text-gray-500 dark:text-gray-400">Fast Delivery</p>
               </div>
             </div>
           </div>
           <div className="relative">
             <img src={heroImage} alt="" className="rounded-2xl shadow-2xl w-full"/>
-            <div className="absolute -bottom-5 left-4 bg-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3">
+            <div className="absolute -bottom-5 left-4 bg-white dark:bg-gray-800 px-5 py-3 rounded-xl shadow-lg flex items-center gap-3">
               <img src={starIcon} alt="" className="w-5 h-5"/>
               <div>
-                <h4 className="font-semibold text-sm">
+                <h4 className="font-semibold text-sm dark:text-white">
                   Flash Deal Live
                 </h4>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Up to 40% off electronics
                 </p>
               </div>
@@ -236,15 +237,15 @@ if (displayNewArrivals.length < 3) {
         </div>
       </div>
     </section>
-<section className="bg-[#f7f7f7] py-20">
+<section className="bg-[#f7f7f7] dark:bg-gray-800 py-20 transition-colors duration-300">
   <div className="max-w-7xl mx-auto px-6">
     <div className="flex items-center justify-between mb-10">
       <div>
-        <h2 className="text-4xl font-bold text-gray-900">
-          Shop by Category
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
+          Featured Brands
         </h2>
-        <p className="text-gray-500 mt-2">
-          Find exactly what you're looking for across our curated departments.
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
+          Discover top brands curated for you.
         </p>
       </div>
       <button className="hidden md:flex items-center gap-2 text-blue-600 font-semibold">
@@ -260,14 +261,14 @@ if (displayNewArrivals.length < 3) {
           ${
             activeCategory === item.id
               ? "bg-sky-500 text-white border-sky-500 shadow-lg"
-              : "bg-white border-gray-200 hover:shadow-md"
+              : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:shadow-md"
           }`} >
           <div
             className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 relative
             ${
               activeCategory === item.id
                 ? "bg-white"
-                : "bg-gray-100"
+                : "bg-gray-100 dark:bg-gray-600"
             }`}>
             <img src={item.image ? `http://localhost:5000/uploads/${item.image}` : ""} alt={item.category_name}  className="w-8 h-8 object-contain" />
             <button
@@ -283,13 +284,13 @@ if (displayNewArrivals.length < 3) {
                 localStorage.setItem("cart", JSON.stringify(cart));
                 window.location.href = "/cart";
               }}
-              className="absolute -top-2 -right-2 bg-white rounded-full p-1.5 shadow hover:bg-gray-100 transition">
-              <img src={cartIcon} alt="" className="w-3.5 h-3.5" />
+              className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full p-1.5 shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition">
+              <img src={cartIcon} alt="" className="w-3.5 h-3.5 dark:invert" />
             </button>
           </div>
           <h3 className={`font-semibold ${   activeCategory === item.id
                 ? "text-white"
-                : "text-gray-900"
+                : "text-gray-900 dark:text-white"
             }`}>
             {item.category_name}
           </h3>
@@ -297,7 +298,7 @@ if (displayNewArrivals.length < 3) {
             className={`text-sm mt-1 ${
               activeCategory === item.id
                 ? "text-white/80"
-                : "text-gray-500"
+                : "text-gray-500 dark:text-gray-400"
             }`} >
             1,240 Products
           </p>
@@ -312,27 +313,26 @@ if (displayNewArrivals.length < 3) {
     </div>
   </div>
 </section>
-<section className="py-20 bg-gradient-to-r from-[#e9e9ef] to-[#ffe9b8]">
+<section className="py-20 bg-gradient-to-r from-[#e9e9ef] to-[#ffe9b8] dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
   <div className="max-w-7xl mx-auto px-6">
     <div className="text-center mb-12">
-      <h2 className="text-4xl font-bold text-gray-900">
+      <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
         Featured Products
       </h2>
-      <p className="text-gray-600 mt-3">
+      <p className="text-gray-600 dark:text-gray-300 mt-3">
         Handpicked by our experts for exceptional quality and innovative design.
       </p>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {displayFeatured.map((product) => (
-        <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
+        <div key={product.id} className="bg-white dark:bg-gray-700 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
         <div className="relative">
   <img src={product.image}  alt=""
     className="w-full h-64 object-cover"/>
   {product.discount && (
     <span className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded">
       {product.discount}
-    </span>
-  )}
+    </span> )}
   <button  onClick={(e) => {   e.stopPropagation();
       const currentWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
       const exists = currentWishlist.some((w) => w.image === product.image);
@@ -363,19 +363,45 @@ if (displayNewArrivals.length < 3) {
   </button>
 </div>
           <div className="p-4">
-            <p className="text-xs uppercase text-gray-400 mb-2">{product.category}</p>
-            <h3 className="font-semibold text-lg text-gray-900">{product.title}</h3>
-            <div className="flex items-center gap-1 my-3">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <img key={item} src={starIcon} alt="" className="w-4 h-4" />
-              ))}
-            </div>
+            <p className="text-xs uppercase text-gray-400 dark:text-gray-300 mb-2">{product.category}</p>
+            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{product.title}</h3>
+            {product.rating && parseFloat(product.rating) > 0 ? (
+              <div className="flex items-center gap-1 my-3">
+                {[1, 2, 3, 4, 5].map((s) => {
+                  const rVal = parseFloat(product.rating || "0");
+                  const isFilled = s <= Math.round(rVal);
+                  return (
+                    <img key={s} src={starIcon} alt="star"
+                         onClick={async (e) => {
+                            e.preventDefault();
+                            if(product.id.toString().startsWith("static")) {
+                               alert("Cannot rate static products"); return;
+                            }
+                            try {
+                               await fetch(`http://localhost:5000/api/products/${product.id}/rate`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ rating: s })
+                               });
+                               alert("Rating updated! Please refresh.");
+                            } catch(err) { console.log(err); }
+                         }}
+                         className={`w-4 h-4 object-contain cursor-pointer transition-transform hover:scale-110 ${isFilled ? "" : "opacity-30"}`} />
+                  );
+                })}
+                <span className="text-gray-500 dark:text-gray-400 text-xs ml-1 font-semibold">({product.rating})</span>
+              </div>
+            ) : (
+              <div className="my-3">
+                <span className="text-gray-400 dark:text-gray-500 text-xs italic">not rating yet</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-bold">{product.price}</span>
+              <span className="text-xl font-bold dark:text-white">{product.price}</span>
               <span className="text-sm text-gray-400 line-through">{product.oldPrice}</span>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => window.location.href = "/product"} className="flex-1 border border-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-100">Details</button>
+              <button onClick={() => window.location.href = "/product"} className="flex-1 border border-gray-300 dark:border-gray-600 dark:text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-600 transition">Details</button>
               <button
                 onClick={() => {
                   const cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -399,42 +425,39 @@ if (displayNewArrivals.length < 3) {
     </div>
   </div>
 </section>
-<section className="bg-[#f7f7f7] py-20">
+<section className="bg-[#f7f7f7] dark:bg-gray-900 py-20 transition-colors duration-300">
   <div className="max-w-7xl mx-auto px-6">
     <div className="flex justify-between items-center mb-10">
       <div>
-        <h2 className="text-4xl font-bold text-gray-900">
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
           New Arrivals
         </h2>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
           The latest trends and tech, fresh from the design studio.
         </p>
       </div>
       <div className="hidden md:flex gap-3">
-        <button className="w-10 h-10 rounded-full border flex items-center justify-center">
-         <img src={leftArrow} alt="" className="w-3" /> 
+        <button className="w-10 h-10 rounded-full border dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+         <img src={leftArrow} alt="" className="w-3 dark:invert" /> 
         </button>
-        <button className="w-10 h-10 rounded-full border flex items-center justify-center">
-          <img src={rightArrow} alt="" className="w-3" />
+        <button className="w-10 h-10 rounded-full border dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+          <img src={rightArrow} alt="" className="w-3 dark:invert" />
         </button>
       </div>
     </div>
     <div className="grid md:grid-cols-3 gap-6">
       {displayNewArrivals.map((item) => (
         <div key={item.id}
-          className="bg-white border rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition">
+          className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition">
           <img src={item.image} alt="" className="w-24 h-24 rounded-lg object-cover"/>
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
               {item.title}
             </h3>
-            <p className="text-blue-600 font-bold mt-1">
+            <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">
               {item.price}
             </p>
-         <button
-  onClick={() => {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
+         <button onClick={() => {   const cart = JSON.parse(localStorage.getItem("cart")) || [];
     cart.push({
       img: item.image,
       tag: "New Arrivals",
@@ -458,10 +481,10 @@ if (displayNewArrivals.length < 3) {
     </div>
     <div className="mt-28">
       <div className="text-center mb-14">
-        <h2 className="text-4xl font-bold text-gray-900">
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
           What Our Customers Say
         </h2>
-        <p className="text-gray-500 mt-3">
+        <p className="text-gray-500 dark:text-gray-400 mt-3">
           Real experiences from our global community of design enthusiasts.
         </p>
       </div>
@@ -470,24 +493,24 @@ if (displayNewArrivals.length < 3) {
          <div key={item.id} onClick={() => setActiveReview(item.id)}
   className={`rounded-2xl p-8 border cursor-pointer transition-all duration-300 ${
     activeReview === item.id
-      ? "bg-[#ccb09b] border-black-300"
-      : "bg-white hover:shadow-lg" }`}>
+      ? "bg-[#ccb09b] border-black-300 dark:border-gray-600"
+      : "bg-white dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg" }`}>
             <div className="flex gap-1 mb-5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <img key={star} src={starIcon} alt="" className="w-4 h-4"/>
               ))}
             </div>
-            <p className="text-gray-600 italic leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-300 italic leading-relaxed">
               "{item.review}"
             </p>
             <div className="flex items-center gap-3 mt-6">
               <img src={item.image} alt=""
                 className="w-12 h-12 rounded-full object-cover" />
               <div>
-                <h4 className="font-semibold">
+                <h4 className="font-semibold dark:text-white">
                   {item.name}
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {item.role}
                 </p>
               </div>
@@ -496,48 +519,48 @@ if (displayNewArrivals.length < 3) {
         ))}
       </div>
     </div>
-    <div className="border-t mt-20 pt-10">
+    <div className="border-t dark:border-gray-700 mt-20 pt-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
         <div onClick={() => (window.location.href = "/checkout")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
-          <img src={truckIcon} alt="" className="w-8 h-8" />
+          <img src={truckIcon} alt="" className="w-8 h-8 dark:invert" />
           <div>
-            <h4 className="font-semibold">
+            <h4 className="font-semibold dark:text-white">
               Free Express Shipping
             </h4>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Orders over ₹1500
             </p>
           </div>
         </div>
         <div onClick={() => (window.location.href = "/checkout")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
-          <img src={verifiedIcon} alt="" className="w-8 h-8" />
+          <img src={verifiedIcon} alt="" className="w-8 h-8 dark:invert" />
           <div>
-            <h4 className="font-semibold">
+            <h4 className="font-semibold dark:text-white">
               Secure Payment
             </h4>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               100% protected data
             </p>
           </div>
         </div>
         <div onClick={() => (window.location.href = "/services")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
-          <img src={starIcon} alt="" className="w-8 h-8" />
+          <img src={starIcon} alt="" className="w-8 h-8 dark:invert" />
           <div>
-            <h4 className="font-semibold">
+            <h4 className="font-semibold dark:text-white">
               Genuine Products
             </h4>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Direct from manufacturers
             </p>
           </div>
         </div>
         <div onClick={() => (window.location.href = "/contact")} className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition">
-          <img src={musicIcon} alt="" className="w-8 h-8" />
+          <img src={musicIcon} alt="" className="w-8 h-8 dark:invert" />
           <div>
-            <h4 className="font-semibold">
+            <h4 className="font-semibold dark:text-white">
               24/7 Support
             </h4>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Dedicated team
             </p>
           </div>

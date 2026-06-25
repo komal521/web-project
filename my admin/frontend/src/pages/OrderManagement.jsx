@@ -26,8 +26,10 @@ import rightArrowIcon from "../assets/right-arrow.png";
 import rightUp from "../assets/right-up.png";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 const profileImages = [c1, c2, c3, c4, c5];
-const OrderManagement = ({ darkMode }) => {
+const OrderManagement = ({ darkMode, setActive, setEditData }) => {
   const [activeBtn, setActiveBtn] = useState("add");
   const [cards, setCards] = useState([
     { title: "Total Orders", value: "0", growth: "0%", icon: boxIcon },
@@ -128,19 +130,19 @@ const OrderManagement = ({ darkMode }) => {
         {
           title: "Total Orders",
           value: res.data.totalOrders?.toString() || "0",
-          growth: "↑ 14.2% vs last month",
+          growth: " 14.2% vs last month",
           icon: boxIcon,
         },
         {
           title: "Pending Orders",
           value: res.data.pendingOrders?.toString() || "0",
-          growth: "↓ 2.4% vs last month",
+          growth: " 2.4% vs last month",
           icon: clockIcon,
         },
         {
           title: "Completed Orders",
           value: res.data.completedOrders?.toString() || "0",
-          growth: "↑ 8.1% vs last month",
+          growth: " 8.1% vs last month",
           icon: checkIcon,
         },
         {
@@ -215,25 +217,90 @@ const OrderManagement = ({ darkMode }) => {
       alert("No data available to download");
       return;
     }
-    const headers = ["Order ID", "Customer Name", "Product/Items", "Date", "Status", "Amount"];
-    const rows = orders.map((o) => [
-      `"${o.id}"`,
-      `"${o.customer}"`,
-      `"${o.product}"`,
-      `"${o.date}"`,
-      `"${o.status}"`,
-      `"${o.amount.replace("₹", "").replace(/,/g, "")}"`,
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Orders Full History Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}  |  Total Orders: ${orders.length}`, 14, 26);
+    const tableColumn = ["Order ID", "Customer", "Product/Items", "Date", "Payment", "Status", "Amount"];
+    const tableRows = [];
+    orders.forEach((o) => {
+      tableRows.push([
+        o.id,
+        o.customer,
+        o.product,
+        o.date,
+        o.payment || "UPI/Card",
+        o.status,
+        o.amount ? o.amount.toString().replace(/₹/g, 'Rs. ') : ""
+      ]);
+    });
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 32,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+    
+    const fileName = `Orders_Full_History_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (orders.length === 0) {
+      alert("No orders available to export");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Order Management Export", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Exported: ${new Date().toLocaleString()}  |  Total: ${orders.length} orders`, 14, 26);
+    const tableColumn = ["Order ID", "Customer", "Items", "Date", "Status", "Amount"];
+    const tableRows = orders.map((o) => [
+      o.id, o.customer, o.product, o.date, o.status, o.amount ? o.amount.toString().replace(/₹/g, 'Rs. ') : ""
     ]);
-    const csvContent =
-      "data:application/vnd.ms-excel;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Orders_Report_${new Date().toLocaleDateString()}.xls`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 32,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+    
+    const fileName = `Orders_Export_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -257,7 +324,7 @@ const OrderManagement = ({ darkMode }) => {
     },
     {
       title: "Download Report",
-      desc: "Export sales to Excel/CSV",
+      desc: "Full PDF history of all orders",
       icon: downloadIcon,
       onClick: handleDownloadReport,
     },
@@ -266,19 +333,6 @@ const OrderManagement = ({ darkMode }) => {
       desc: "Process refunds & swaps",
       icon: undoIcon,
       onClick: () => setShowReturnsModal(true),
-    },
-    {
-      title: "Track Shipment",
-      desc: "Live courier updates",
-      icon: carIcon,
-      onClick: () => {
-        if (orders.length > 0) {
-          setTrackingOrder(orders[0]);
-          setShowTrackingModal(true);
-        } else {
-          alert("No orders available to track!");
-        }
-      },
     },
   ];
   return (
@@ -306,15 +360,14 @@ const OrderManagement = ({ darkMode }) => {
                     setSearchQuery(e.target.value);
                     setActivePage(1);
                   }}
-                  className={`bg-transparent outline-none flex-1 text-sm ${darkMode ? "text-white placeholder:text-gray-500" : "text-[#222]"}`}
-                />
+                  className={`bg-transparent outline-none flex-1 text-sm ${darkMode ? "text-white placeholder:text-gray-500" : "text-[#222]"}`} />
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => handleDownloadReport()}
+                  onClick={() => handleExportPDF()}
                   className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-300" >
                   <img src={downloadIcon} alt="" className="w-4 h-4" />
-                  <span className="font-medium text-yellow-900 text-sm">Export</span>
+                  <span className="font-medium text-yellow-900 text-sm">Export PDF</span>
                 </button>
                 <button
                   onClick={() => setShowAddForm(true)}
@@ -393,43 +446,21 @@ const OrderManagement = ({ darkMode }) => {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={async () => {
-                              setShippingOrder(item.raw);
-                              try {
-                                const res = await fetch(`http://localhost:5000/api/shipping/${item.raw.id}`);
-                                const d = await res.json();
-                                if (d.success && d.shipping) {
-                                  setShippingData({ tracking_number: d.shipping.tracking_number || "", carrier: d.shipping.carrier || "Standard Delivery", shipping_status: d.shipping.shipping_status || "Pending", estimated_delivery: d.shipping.estimated_delivery ? d.shipping.estimated_delivery.split("T")[0] : "" });
-                                } else {
-                                  setShippingData({ tracking_number: "", carrier: "Standard Delivery", shipping_status: "Pending", estimated_delivery: "" });
-                                }
-                              } catch { setShippingData({ tracking_number: "", carrier: "Standard Delivery", shipping_status: "Pending", estimated_delivery: "" }); }
-                              setShowShippingModal(true);
-                            }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center bg-green-50 hover:bg-green-100 transition-all"
-                            title="Manage Shipping"
-                          >
-                            <img src={carIcon} alt="Ship" className="w-4 h-4 opacity-80" />
-                          </button>
-                          <button
                             onClick={() => setViewOrder(item.raw)}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 transition-all"
-                            title="View"
-                          >
+                            title="View"   >
                             <img src={showIcon} alt="View" className="w-4 h-4 opacity-80" />
                           </button>
-                          <button
-                            onClick={() => setEditOrder(item.raw)}
+                          <button onClick={() => {
+                              setEditData(item.raw);
+                              setActive("Edit Order");  }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-50 hover:bg-amber-100 transition-all"
-                            title="Edit"
-                          >
+                            title="Edit"  >
                             <img src={pencilIcon} alt="Edit" className="w-4 h-4 opacity-80" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteOrder(item.raw.id)}
+                          <button   onClick={() => handleDeleteOrder(item.raw.id)}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-red-50 hover:bg-red-100 transition-all"
-                            title="Delete"
-                          >
+                            title="Delete" >
                             <img src={binIcon} alt="Delete" className="w-4 h-4 opacity-80" />
                           </button>
                         </div>
@@ -455,8 +486,7 @@ const OrderManagement = ({ darkMode }) => {
                 <button
                   disabled={activePage === 1}
                   onClick={() => setActivePage((prev) => Math.max(prev - 1, 1))}
-                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[#f3f3f3] hover:bg-[#e7e7e7] transition-all duration-300 disabled:opacity-50"
-                >
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[#f3f3f3] hover:bg-[#e7e7e7] transition-all duration-300 disabled:opacity-50"  >
                   <img src={leftArrowIcon} alt="" className="w-4 h-4" />
                 </button>
                 {Array.from({ length: totalPages }).map((_, idx) => (
@@ -467,16 +497,14 @@ const OrderManagement = ({ darkMode }) => {
                       activePage === idx + 1
                         ? "bg-[#d4a84f] text-white shadow-md"
                         : "bg-[#f3f3f3] text-[#222] hover:bg-[#ececec]"
-                    }`}
-                  >
+                    }`} >
                     {idx + 1}
                   </button>
                 ))}
                 <button
                   disabled={activePage === totalPages}
                   onClick={() => setActivePage((prev) => Math.min(prev + 1, totalPages))}
-                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[#f3f3f3] hover:bg-[#e7e7e7] transition-all duration-300 disabled:opacity-50"
-                >
+                  className="w-9 h-9 rounded-full flex items-center justify-center bg-[#f3f3f3] hover:bg-[#e7e7e7] transition-all duration-300 disabled:opacity-50" >
                   <img src={rightArrowIcon} alt="" className="w-4 h-4" />
                 </button>
               </div>
@@ -487,8 +515,7 @@ const OrderManagement = ({ darkMode }) => {
               <div
                 key={index}
                 onClick={item.onClick}
-                className="rounded-[24px] p-5 border flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 bg-[#c7e9d1] border-[#b8dcc3] cursor-pointer hover:shadow-md"
-              >
+                className="rounded-[24px] p-5 border flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 bg-[#c7e9d1] border-[#b8dcc3] cursor-pointer hover:shadow-md"  >
                 <div className="w-12 h-12 rounded-full bg-[#b7a8ff] flex items-center justify-center">
                   <img src={item.icon} alt="" className="w-5 h-5" />
                 </div>
@@ -550,12 +577,9 @@ const OrderManagement = ({ darkMode }) => {
       {viewOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button
-              onClick={() => setViewOrder(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl"
-            >
-              x
-            </button>
+            <button onClick={() => setViewOrder(null)} className="absolute top-4 right-4">
+       <img src={closeIcon} alt="Close" className="w-5 h-5 hover:opacity-70"/>
+          </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Order Details</h2>
             <div className="space-y-4 text-sm">
               <p><strong>Order ID:</strong> #ORD-{viewOrder.id}</p>
@@ -588,13 +612,9 @@ const OrderManagement = ({ darkMode }) => {
           <form
             onSubmit={handleEditOrderSubmit}
             className={`w-full max-w-xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button
-              type="button"
-              onClick={() => setEditOrder(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl"
-            >
-              x
-            </button>
+           <button type="button" onClick={() => setEditOrder(null)} className="absolute top-4 right-4">
+  <img src={closeIcon} alt="Close" className="w-5 h-5 hover:opacity-70" />
+</button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Edit Order #{editOrder.id}</h2>
             <div className="space-y-4">
               <div>
@@ -647,12 +667,10 @@ const OrderManagement = ({ darkMode }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <form onSubmit={handleAddOrderSubmit}
             className={`w-full max-w-xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button
-              type="button"
-              onClick={() => setShowAddForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
-              x
-            </button>
+            <button type="button" onClick={() => setShowAddForm(false)}
+  className="absolute top-4 right-4 hover:scale-110 transition-transform">
+  <img src={closeIcon} alt="Close" className="w-5 h-5" />
+</button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Create New Order</h2>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div>
@@ -721,10 +739,9 @@ const OrderManagement = ({ darkMode }) => {
       {showReturnsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-3xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button  onClick={() => setShowReturnsModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
-              x
-            </button>
+            <button onClick={() => setShowReturnsModal(false)} className="absolute top-4 right-4 hover:scale-110 transition-transform">
+  <img  src={closeIcon}  alt="Close"  className="w-5 h-5"/>
+         </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Manage Returns & Swaps</h2>
             <div className="overflow-x-auto max-h-[50vh] border rounded-2xl">
               <table className="w-full text-left">
@@ -833,8 +850,7 @@ const OrderManagement = ({ darkMode }) => {
                   setShowTrackingModal(false);
                   setTrackingOrder(null);
                 }}
-                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"
-              >
+                className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300"  >
                 Close
               </button>
             </div>

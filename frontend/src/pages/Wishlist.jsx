@@ -67,14 +67,14 @@ const goToAddMore = () => {
   return (
     <>
       <Navbar />
-      <div className="bg-[#FAF9F6] min-h-screen py-10">
+      <div className="bg-[#FAF9F6] dark:bg-gray-900 min-h-screen py-10 text-gray-800 dark:text-gray-100 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#4A3428]">
+            <h1 className="text-3xl font-bold text-[#4A3428] dark:text-amber-100">
               My Wishlist
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               Save your favorite products for later.
             </p>
           </div>
@@ -84,14 +84,14 @@ const goToAddMore = () => {
                 {wishlistItems.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition">
+                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition">
                     <div className="relative">
                       <img
                         src={item.image}
                         alt={item.name}
                         className="w-full h-72 object-cover"  />
                      <button  onClick={() => removeFromWishlist(item.id)}
-  className="absolute top-3 left-3 bg-white w-8 h-8 rounded-full shadow flex items-center justify-center"> 
+             className="absolute top-3 left-3 bg-white w-8 h-8 rounded-full shadow flex items-center justify-center"> 
                         <img
                           src={closeIcon}
                           alt=""
@@ -105,10 +105,10 @@ const goToAddMore = () => {
                       </button>
                     </div>
                     <div className="p-4">
-                      <p className="text-xs uppercase text-gray-400">
+                      <p className="text-xs uppercase text-gray-400 dark:text-gray-500">
                         {item.category}
                       </p>
-                      <h3 className="font-semibold text-[#4A3428] mt-1">
+                      <h3 className="font-semibold text-[#4A3428] dark:text-gray-100 mt-1">
                         {item.name}
                       </h3>
                      <p className="text-xl font-bold text-[#8B6B4A] mt-3">
@@ -125,77 +125,71 @@ const goToAddMore = () => {
                   </div>
                 ))}
                 <div onClick={goToAddMore}
-  className="bg-white border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center min-h-[430px] cursor-pointer hover:bg-gray-50 transition">
+       className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center min-h-[430px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition">
                   <img src={addIcon} alt=""
-                    className="w-12 h-12 mb-4"
-                  />
-                  <h3 className="font-semibold text-[#4A3428]">
+                    className="w-12 h-12 mb-4 dark:invert" />
+                  <h3 className="font-semibold text-[#4A3428] dark:text-gray-200">
                     Add More Items
                   </h3>
-                  <p className="text-gray-500 text-sm mt-2 text-center px-4">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 text-center px-4">
                     Continue shopping and save more products.
                   </p>
                 </div>
               </div>
             </div>
             <div>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-                <h2 className="text-xl font-bold text-[#4A3428] mb-5">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 sticky top-24">
+                <h2 className="text-xl font-bold text-[#4A3428] dark:text-gray-100 mb-5">
                   Wishlist Summary
                 </h2>
                 <div className="flex -space-x-3 mb-5">
                   <img   src={a2}   alt=""
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover"/>
+                    className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-800 object-cover"/>
                   <img  src={a5}  alt=""
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover" />
+                    className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-800 object-cover" />
                   <img  src={bag}  alt=""
-                    className="w-12 h-12 rounded-full border-2 border-white object-cover"  />
+                    className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-800 object-cover"  />
                 </div>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>Items</span>
                     <span>{wishlistItems.length}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>Total Value</span>
                     <span>
                       ₹{total.toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>
-                <hr className="my-5" />
-                <div className="flex justify-between font-bold text-lg">
+                <hr className="my-5 border-gray-200 dark:border-gray-750" />
+                <div className="flex justify-between font-bold text-lg text-gray-800 dark:text-white">
                   <span>Total</span>
                   <span>
                     ₹{total.toLocaleString("en-IN")}
                   </span>
                 </div>
-                <button
-  onClick={moveAllToCart}
-  className="w-full mt-6 bg-[#8B6B4A] hover:bg-[#73563A] text-white py-3 rounded-xl flex items-center justify-center gap-2 transition">
-  <img src={checkoutIcon} alt="" className="w-4 h-4" />
-  Move All To Cart
-</button>
+                <button onClick={moveAllToCart} className="w-full mt-6 bg-[#8B6B4A] hover:bg-[#73563A] text-white py-3 rounded-xl flex items-center justify-center gap-2 transition">
+            <img src={checkoutIcon} alt="" className="w-4 h-4" /> Move All To Cart</button>
                 <button onClick={clearWishlist}
-  className="w-full mt-3 border border-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 text-[#4A3428] hover:bg-gray-50 transition">
-  <img src={binIcon} alt="" className="w-4 h-4"/>
-  Clear Wishlist</button>
+            className="w-full mt-3 border border-gray-300 dark:border-gray-700 py-3 rounded-xl flex items-center justify-center gap-2 text-[#4A3428] dark:text-gray-350 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+             <img src={binIcon} alt="" className="w-4 h-4 dark:invert"/>Clear Wishlist</button>
               </div>
             </div>
           </div>
-          <div className="mt-10 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="mt-10 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-              <h3 className="font-semibold text-[#4A3428]">
+              <h3 className="font-semibold text-[#4A3428] dark:text-gray-250">
                 Wait, there's more!
               </h3>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Explore our latest arrivals and exclusive
                 collections.
               </p>
             </div>
           <button onClick={goToAddMore}
-  className="bg-[#4A3428] text-white px-6 py-3 rounded-xl"> New Collection
-</button>
+          className="bg-[#4A3428] dark:bg-[#8B6B4A] text-white px-6 py-3 rounded-xl"> New Collection
+         </button>
           </div>
         </div>
       </div>

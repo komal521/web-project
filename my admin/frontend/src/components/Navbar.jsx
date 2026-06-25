@@ -4,15 +4,23 @@ import moonIcon from "../assets/moon.png";
 import notificationIcon from "../assets/notification.png";
 import messageIcon from "../assets/msg.png";
 import userImg from "../assets/u2.jpg";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 const Navbar = ({ setOpen, darkMode, setDarkMode, setActive }) => {
   const [searchVal, setSearchVal] = useState("");
+  const [adminName, setAdminName] = useState("Julian Vane");
+  useEffect(() => {
+    fetch("http://localhost:5000/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings?.fullName) {
+          setAdminName(data.settings.fullName);
+        }
+      })
+      .catch(() => {});
+  }, []);
   return (
     <nav
-      className={`
-        sticky top-0 z-30 w-full border-b
-        px-3 sm:px-5 py-3
-        flex items-center justify-between gap-3
+      className={`  sticky top-0 z-30 w-full border-b  px-3 sm:px-5 py-3  flex items-center justify-between gap-3
         backdrop-blur-xl transition-all duration-300
         ${darkMode
           ? "bg-gray-900/95 border-gray-700 text-white"
@@ -42,14 +50,10 @@ const Navbar = ({ setOpen, darkMode, setDarkMode, setActive }) => {
       </div>
       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">
-          <button  onClick={() => setDarkMode(false)}
-            title="Light Mode"
-            className={`p-2 rounded-full transition-all duration-300 ${!darkMode ? "bg-yellow-100 shadow-md scale-105" : "hover:bg-gray-700"}`} >
-            <img src={sunIcon} alt="light" className="w-4 h-4 object-contain" />
-          </button>
-          <button  onClick={() => setDarkMode(true)} title="Dark Mode"
-            className={`p-2 rounded-full transition-all duration-300 ${darkMode ? "bg-gray-700 shadow-md scale-105" : "hover:bg-gray-100"}`} >
-            <img src={moonIcon} alt="dark" className="w-4 h-4 object-contain" />
+          <button  onClick={() => setDarkMode(!darkMode)}
+            title="Toggle Theme"
+            className={`p-2 rounded-full transition-all duration-300 shadow-md ${darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-yellow-100 hover:bg-yellow-200"}`} >
+            <img src={darkMode ? moonIcon : sunIcon} alt="theme" className="w-4 h-4 object-contain" />
           </button>
         </div>
         <button className={`relative p-2 rounded-full transition-all duration-300 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
@@ -64,7 +68,7 @@ const Navbar = ({ setOpen, darkMode, setDarkMode, setActive }) => {
         <div  onClick={() => setActive && setActive("Profile")}
           className={`flex items-center gap-2 pl-2 sm:pl-3 border-l cursor-pointer hover:opacity-80 transition-opacity ${darkMode ? "border-gray-700" : "border-gray-200"}`} >
           <div className="hidden sm:block text-right">
-            <h3 className="text-xs sm:text-sm font-semibold whitespace-nowrap">Julian Vane</h3>
+            <h3 className="text-xs sm:text-sm font-semibold whitespace-nowrap">{adminName}</h3>
             <p className={`text-[10px] sm:text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
               Admin Portal
             </p>

@@ -19,10 +19,13 @@ import ecoLivingIcon from "../assets/cat-eco-living.svg";
 import c1 from "../assets/c1.jpg";
 import c2 from "../assets/c2.jpg";
 import c3 from "../assets/c3.jpg";
+import closeIcon from "../assets/close.png";
 import AddCategory from "./AddCategory";
 import deleteIcon from "../assets/bin (1).png";
 import pencilIcon from "../assets/pencil (1).png";
-const Categories = ({ darkMode }) => {
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+const Categories = ({ darkMode, setActive, setEditData }) => {
   const [activeButton, setActiveButton] = useState("add");
   const defaultCards = [
     { title: "Total Categories", value: "48", percent: "+12%", icon: cateIcon },
@@ -114,6 +117,56 @@ const Categories = ({ darkMode }) => {
       console.log(error);
     }
   };
+
+  const exportPDF = () => {
+    if (categories.length === 0) {
+      alert("No data available to download");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Categories Full History Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}  |  Total Categories: ${categories.length}`, 14, 26);
+    
+    const tableColumn = ["ID", "Name", "Slug", "Status", "Products", "Created At"];
+    const tableRows = [];
+    categories.forEach(item => {
+      tableRows.push([
+        item.id,
+        item.category_name,
+        item.slug,
+        item.status,
+        item.stats || 0,
+        new Date(item.created_at || Date.now()).toLocaleDateString()
+      ]);
+    }); 
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 32,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+    const fileName = `Categories_Full_History_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
+  };
+
   if (showAddPage) {
     return <AddCategory darkMode={darkMode} />;
   }
@@ -148,6 +201,11 @@ const Categories = ({ darkMode }) => {
               <img src={addIcon} alt="" className="w-4 h-4 brightness-0 invert" />
               <span className="font-semibold text-sm">Add Category</span>
             </button>
+            <button onClick={exportPDF}
+              className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-300" >
+              <img src={uploadIcon} alt="" className="w-4 h-4" />
+              <span className="font-medium text-yellow-900 text-sm">Export</span>
+            </button>
           </div>
         </div>
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
@@ -179,10 +237,9 @@ const Categories = ({ darkMode }) => {
               </div>
               <span className="text-xs text-gray-400">Showing all {categories.length} entries</span>
             </div>
-            <div className="hidden md:grid w-full grid-cols-[70px_170px_70px_90px_100px_120px] justify-between border-b border-gray-100 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-gray-400 items-center">
+            <div className="hidden md:grid w-full grid-cols-[70px_170px_90px_100px_120px] justify-between border-b border-gray-100 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-gray-400 items-center">
               <span>Image</span>
               <span>Category Info</span>
-              <span>Stats</span>
               <span>Status</span>
               <span>Created At</span>
               <span className="text-right pr-4">Actions</span>
@@ -201,7 +258,7 @@ const Categories = ({ darkMode }) => {
               {categories.filter(item => item.category_name?.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
                 <div
                   key={item.id || item.category_name}
-                  className="w-full grid grid-cols-1 md:grid-cols-[70px_170px_70px_90px_100px_120px] justify-between gap-x-2 rounded-2xl border border-gray-100 bg-[#fcfbf7] px-4 py-3 shadow-sm md:items-center" >
+                  className="w-full grid grid-cols-1 md:grid-cols-[70px_170px_90px_100px_120px] justify-between gap-x-2 rounded-2xl border border-gray-100 bg-[#fcfbf7] px-4 py-3 shadow-sm md:items-center" >
                   <img
                     src={item.image ? `http://localhost:5000/uploads/${item.image}` : "https://via.placeholder.com/80"}
                     alt={item.category_name || "Category"}
@@ -209,10 +266,6 @@ const Categories = ({ darkMode }) => {
                   <div className="min-w-0 flex flex-col">
                     <h3 className="font-bold text-[#1f2937] truncate">{item.category_name || "Untitled category"}</h3>
                     <p className="mt-1 text-xs text-gray-400 truncate">{item.slug || "No slug"}</p>
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="font-bold text-[#1f2937]">{item.stats || "0"}</p>
-                    <p className="text-xs text-gray-400">Products</p>
                   </div>
                   <span
                     className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
@@ -232,7 +285,10 @@ const Categories = ({ darkMode }) => {
                       <img src={viewIcon} alt="View" className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => setEditCat(item)}
+                      onClick={() => {
+                        setEditData(item);
+                        setActive("Edit Category");
+                      }}
                       className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-amber-100 text-amber-600 transition-all"
                       title="Edit">
                       <img src={pencilIcon} alt="Edit" className="w-4 h-4" />
@@ -255,9 +311,9 @@ const Categories = ({ darkMode }) => {
       {viewCat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-md rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button onClick={() => setViewCat(null)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl">
-             x
-            </button>
+            <button onClick={() => setViewCat(null)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500">
+  <img src={closeIcon} alt="Close" className="w-5 h-5 cursor-pointer"/>
+</button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Category Details</h2>
             <div className="space-y-4 text-sm">
               <div className="flex justify-center mb-4">
@@ -291,54 +347,6 @@ const Categories = ({ darkMode }) => {
         </div>
       )}
 
-      {editCat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <form onSubmit={handleEditCatSubmit} className={`w-full max-w-md rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button type="button" onClick={() => setEditCat(null)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl">
-              x
-            </button>
-            <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Edit Category</h2>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category Name</label>
-                <input  type="text"  required  value={editCat.category_name}
-                  onChange={(e) => setEditCat({ ...editCat, category_name: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Slug</label>
-                <input type="text" value={editCat.slug} onChange={(e) => setEditCat({ ...editCat, slug: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f]"/>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
-                <textarea  value={editCat.description}  onChange={(e) => setEditCat({ ...editCat, description: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] h-20"/>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Status</label>
-                <select
-                  value={editCat.status}
-                  onChange={(e) => setEditCat({ ...editCat, status: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#d7a53f] bg-white" >
-                  <option value="Active">Active</option>
-                  <option value="Trending">Trending</option>
-                  <option value="Hidden">Hidden</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
-            <div className="mt-8 flex justify-end gap-3">
-              <button type="button" onClick={() => setEditCat(null)} className="px-6 py-2 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">
-                Cancel
-              </button>
-              <button type="submit" className="px-6 py-2 rounded-xl bg-[#1f2937] text-white font-semibold hover:opacity-90">
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 };

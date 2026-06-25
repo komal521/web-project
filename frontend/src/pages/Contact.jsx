@@ -84,7 +84,7 @@ const Contact = () => {
           </svg>
         </div>
       </section>
-      <section className="bg-[#FAF9F7] py-0">
+      <section className="bg-[#FAF9F7] dark:bg-gray-900 py-0 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 -mt-6">
             {[
@@ -94,7 +94,7 @@ const Contact = () => {
                 value: "+91 98765 43210",
                 sub: "Mon-Fri, 9am - 6pm",
                 color: "#7c3aed",
-                bg: "from-purple-50 to-purple-100",
+                bg: "from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40",
               },
               {
                 icon: gmail,
@@ -102,7 +102,7 @@ const Contact = () => {
                 value: "support@shop.com",
                 sub: "24/7 Support Available",
                 color: "#d97706",
-                bg: "from-amber-50 to-amber-100",
+                bg: "from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-800/40",
               },
               {
                 icon: location,
@@ -110,26 +110,26 @@ const Contact = () => {
                 value: "Jind, Haryana",
                 sub: "India",
                 color: "#059669",
-                bg: "from-emerald-50 to-emerald-100",
+                bg: "from-emerald-50 to-emerald-100 dark:from-emerald-900/40 dark:to-emerald-800/40",
               },
             ].map((item) => (
               <div key={item.label}
-                className={`bg-gradient-to-br ${item.bg} rounded-3xl p-6 shadow-sm border border-white flex items-center gap-5 hover:shadow-md transition-all duration-300 hover:-translate-y-1`}>
+                className={`bg-gradient-to-br ${item.bg} rounded-3xl p-6 shadow-sm border border-white dark:border-gray-700 flex items-center gap-5 hover:shadow-md transition-all duration-300 hover:-translate-y-1`}>
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
                   style={{ backgroundColor: item.color + "20" }}>
                   <img src={item.icon} alt="" className="w-7 h-7" style={{ filter: `drop-shadow(0 0 2px ${item.color})` }} />
                 </div>
                 <div>
                   <p className="text-xs font-bold tracking-wider uppercase mb-0.5" style={{ color: item.color }}>{item.label}</p>
-                  <p className="font-bold text-gray-900 text-base">{item.value}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">{item.sub}</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-base">{item.value}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-0.5">{item.sub}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-      <section className="bg-[#FAF9F7] py-16 px-4 md:px-8">
+      <section className="bg-[#FAF9F7] dark:bg-gray-900 py-16 px-4 md:px-8 transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           {successMsg && (
             <div className="mb-8 bg-green-50 border border-green-200 rounded-3xl p-5 flex items-center gap-4">
@@ -142,11 +142,11 @@ const Contact = () => {
           )}
           <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10 items-start">
             <div>
-              <h2 className="font-bold text-gray-900 mb-2"
+              <h2 className="font-bold text-gray-900 dark:text-white mb-2"
                 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)" }}>
                 Concierge Services
               </h2>
-              <p className="text-gray-500 mb-8 text-lg leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 mb-8 text-lg leading-relaxed">
                 Our dedicated team is ready to assist you with sizing,
                 styling, or order inquiries.
               </p>
@@ -157,12 +157,12 @@ const Contact = () => {
                   { q: "How do I track my order?", a: "Once shipped, you'll receive a tracking link via email. You can also check status from your profile page." },
                 ].map((faq, i) => (
                   <details key={i}
-                    className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden cursor-pointer">
-                    <summary className="flex items-center justify-between p-5 font-semibold text-gray-800 text-base list-none">
+                    className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden cursor-pointer">
+                    <summary className="flex items-center justify-between p-5 font-semibold text-gray-800 dark:text-white text-base list-none">
                       {faq.q}
                       <span className="text-amber-500 text-xl transition-transform group-open:rotate-45">+</span>
                     </summary>
-                    <p className="px-5 pb-5 text-gray-500 text-sm leading-relaxed">{faq.a}</p>
+                    <p className="px-5 pb-5 text-gray-500 dark:text-gray-300 text-sm leading-relaxed">{faq.a}</p>
                   </details>
                 ))}
               </div>
@@ -180,70 +180,70 @@ const Contact = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-1" style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)" }}>
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 dark:border-gray-700">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-1" style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)" }}>
                 Send a Message
               </h3>
-              <p className="text-gray-400 text-base mb-8">Fill in the form — we reply within 2 hours.</p>
+              <p className="text-gray-400 dark:text-gray-300 text-base mb-8">Fill in the form — we reply within 2 hours.</p>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 tracking-wide">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 tracking-wide">
                       FULL NAME <span className="text-red-400">*</span>
                     </label>
-                    <div className={`flex items-center gap-3 border-2 rounded-xl px-4 py-3.5 transition-all duration-200 ${errors.name ? "border-red-400 bg-red-50" : "border-gray-200 focus-within:border-amber-400 bg-gray-50"}`}>
-                      <img src={user} alt="" className="w-5 h-5 opacity-50 flex-shrink-0" />
+                    <div className={`flex items-center gap-3 border-2 rounded-xl px-4 py-3.5 transition-all duration-200 ${errors.name ? "border-red-400 bg-red-50 dark:bg-red-900/30" : "border-gray-200 dark:border-gray-700 focus-within:border-amber-400 bg-gray-50 dark:bg-gray-900"}`}>
+                      <img src={user} alt="" className="w-5 h-5 opacity-50 flex-shrink-0 dark:invert" />
                       <input  type="text" name="name" placeholder="John Doe"
                         value={formData.name} onChange={handleChange}
-                        className="w-full bg-transparent outline-none text-gray-800 text-base placeholder:text-gray-400" />
+                        className="w-full bg-transparent outline-none text-gray-800 dark:text-white text-base placeholder:text-gray-400" />
                     </div>
                     <ErrorMsg field="name" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 tracking-wide">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 tracking-wide">
                       EMAIL ADDRESS <span className="text-red-400">*</span>
                     </label>
-                    <div className={`flex items-center gap-3 border-2 rounded-xl px-4 py-3.5 transition-all duration-200 ${errors.email ? "border-red-400 bg-red-50" : "border-gray-200 focus-within:border-amber-400 bg-gray-50"}`}>
+                    <div className={`flex items-center gap-3 border-2 rounded-xl px-4 py-3.5 transition-all duration-200 ${errors.email ? "border-red-400 bg-red-50 dark:bg-red-900/30" : "border-gray-200 dark:border-gray-700 focus-within:border-amber-400 bg-gray-50 dark:bg-gray-900"}`}>
                       <img src={gmail} alt="" className="w-5 h-5 opacity-50 flex-shrink-0" />
                       <input type="email" name="email" placeholder="john@example.com"
                         value={formData.email} onChange={handleChange}
-                        className="w-full bg-transparent outline-none text-gray-800 text-base placeholder:text-gray-400" />
+                        className="w-full bg-transparent outline-none text-gray-800 dark:text-white text-base placeholder:text-gray-400" />
                     </div>
                     <ErrorMsg field="email" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 tracking-wide">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 tracking-wide">
                       PHONE NUMBER
                     </label>
-                    <div className="flex items-center gap-3 border-2 border-gray-200 focus-within:border-amber-400 rounded-xl px-4 py-3.5 bg-gray-50 transition-all duration-200">
-                      <img src={phoneCall} alt="" className="w-5 h-5 opacity-50 flex-shrink-0" />
+                    <div className="flex items-center gap-3 border-2 border-gray-200 dark:border-gray-700 focus-within:border-amber-400 rounded-xl px-4 py-3.5 bg-gray-50 dark:bg-gray-900 transition-all duration-200">
+                      <img src={phoneCall} alt="" className="w-5 h-5 opacity-50 flex-shrink-0 dark:invert" />
                       <input  type="text" name="phone" placeholder="+91 98765 43210"
                         value={formData.phone} onChange={handleChange}
-                        className="w-full bg-transparent outline-none text-gray-800 text-base placeholder:text-gray-400" />
+                        className="w-full bg-transparent outline-none text-gray-800 dark:text-white text-base placeholder:text-gray-400" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 tracking-wide">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 tracking-wide">
                       SUBJECT
                     </label>
-                    <div className="flex items-center gap-3 border-2 border-gray-200 focus-within:border-amber-400 rounded-xl px-4 py-3.5 bg-gray-50 transition-all duration-200">
-                      <img src={copy} alt="" className="w-5 h-5 opacity-50 flex-shrink-0" />
+                    <div className="flex items-center gap-3 border-2 border-gray-200 dark:border-gray-700 focus-within:border-amber-400 rounded-xl px-4 py-3.5 bg-gray-50 dark:bg-gray-900 transition-all duration-200">
+                      <img src={copy} alt="" className="w-5 h-5 opacity-50 flex-shrink-0 dark:invert" />
                       <input type="text" name="subject" placeholder="Order Inquiry, Return, etc."
                         value={formData.subject} onChange={handleChange}
-                        className="w-full bg-transparent outline-none text-gray-800 text-base placeholder:text-gray-400"/>
+                        className="w-full bg-transparent outline-none text-gray-800 dark:text-white text-base placeholder:text-gray-400"/>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 tracking-wide">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 tracking-wide">
                     YOUR MESSAGE <span className="text-red-400">*</span>
                   </label>
-                  <div className={`flex gap-3 border-2 rounded-xl p-4 transition-all duration-200 ${errors.message ? "border-red-400 bg-red-50" : "border-gray-200 focus-within:border-amber-400 bg-gray-50"}`}>
-                    <img src={chat} alt="" className="w-5 h-5 opacity-50 mt-1 flex-shrink-0" />
+                  <div className={`flex gap-3 border-2 rounded-xl p-4 transition-all duration-200 ${errors.message ? "border-red-400 bg-red-50 dark:bg-red-900/30" : "border-gray-200 dark:border-gray-700 focus-within:border-amber-400 bg-gray-50 dark:bg-gray-900"}`}>
+                    <img src={chat} alt="" className="w-5 h-5 opacity-50 mt-1 flex-shrink-0 dark:invert" />
                     <textarea
                       rows="5" name="message" placeholder="Tell us how we can help you..."
                       value={formData.message} onChange={handleChange}
-                      className="w-full bg-transparent outline-none resize-none text-gray-800 text-base placeholder:text-gray-400" />
+                      className="w-full bg-transparent outline-none resize-none text-gray-800 dark:text-white text-base placeholder:text-gray-400" />
                   </div>
                   <ErrorMsg field="message" />
                 </div>

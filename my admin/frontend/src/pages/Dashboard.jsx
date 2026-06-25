@@ -16,7 +16,9 @@ import orderIcon from "../assets/order.png";
 import revenueIcon from "../assets/revenue.png";
 import boxIcon from "../assets/box.png";
 import groupIcon from "../assets/group.png";
-const Dashboard = ({ darkMode }) => {
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+const Dashboard = ({ darkMode, setActive, setEditData }) => {
   const [activeGraph, setActiveGraph] = useState("current");
   const [activePage, setActivePage] = useState(1);
   const [cardData, setCardData] = useState({
@@ -32,9 +34,7 @@ const Dashboard = ({ darkMode }) => {
   const [editProduct, setEditProduct] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-
   const [revenueData, setRevenueData] = useState(Array(12).fill(0));
-
   useEffect(() => {
     const loadDashboardCards = async () => {
       try {
@@ -89,7 +89,6 @@ const Dashboard = ({ darkMode }) => {
       console.error("Products load error:", error);
     }
   };
-
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -137,7 +136,6 @@ const Dashboard = ({ darkMode }) => {
       alert("Failed to update product");
     }
   };
-
   const formatCount = (value) => {
     const number = Number(value || 0);
     if (number >= 1000) {
@@ -148,7 +146,6 @@ const Dashboard = ({ darkMode }) => {
     }
     return new Intl.NumberFormat("en-US").format(number);
   };
-
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -156,7 +153,6 @@ const Dashboard = ({ darkMode }) => {
       notation: Number(value || 0) >= 1000 ? "compact" : "standard",
       maximumFractionDigits: 2,
     }).format(Number(value || 0));
-
   const cards = [
     {
       title: "TOTAL ORDERS",
@@ -199,6 +195,59 @@ const Dashboard = ({ darkMode }) => {
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
   const paginatedProducts = filteredProducts.slice((activePage - 1) * itemsPerPage, activePage * itemsPerPage);
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Dashboard Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
+    doc.setFontSize(13);
+    doc.text("Summary", 14, 36);
+    autoTable(doc, {
+      head: [["Metric", "Value"]],
+      body: [
+        ["Total Orders", String(cardData.totalOrders || 0)],
+        ["Total Revenue", `₹${Number(cardData.totalRevenue || 0).toLocaleString("en-IN")}`],
+        ["Total Products", String(cardData.totalProducts || 0)],
+        ["Active Users", String(cardData.activeUsers || 0)],
+      ],
+      startY: 42,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+    const afterSummaryY = doc.lastAutoTable?.finalY || 90;
+    doc.setFontSize(13);
+    doc.text("Products List", 14, afterSummaryY + 10);
+    const productRows = displayProducts.map((p) => [
+      p.name, p.category, p.price, p.stock, p.status
+    ]);
+    autoTable(doc, {
+      head: [["Product Name", "Category", "Price", "Stock", "Status"]],
+      body: productRows,
+      startY: afterSummaryY + 16,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
+    });
+  
+    const fileName = `Dashboard_Report_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
+  };
   const maxVal = Math.max(...revenueData, 10000);
   const points = revenueData.map((val, idx) => {
     const x = Math.round((idx / 11) * 700);
@@ -212,17 +261,12 @@ const Dashboard = ({ darkMode }) => {
     Math.round(maxVal * 0.75),
     Math.round(maxVal * 0.5),
     Math.round(maxVal * 0.25),
-    0
-  ];
-
+    0 ];
   return (
-    <div
-      className={`
-    w-full p-4 md:p-8 transition-all duration-300 min-h-screen
+    <div  className={` w-full p-4 md:p-8 transition-all duration-300 min-h-screen
     ${darkMode
           ? "bg-[#0f172a] text-white"
-          : "bg-[#f4f7fb] text-black"
-        } `}>
+          : "bg-[#f4f7fb] text-black"  } `}>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div>
           <h1
@@ -232,12 +276,11 @@ const Dashboard = ({ darkMode }) => {
             Welcome back, Julian. Here's what's happening today.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <button className=" flex items-center gap-3 bg-[#6f4e37] px-5 py-3 rounded-2xl border border-gray-200 hover:shadow-lg
+          <button onClick={handleExportPDF} className=" flex items-center gap-3 bg-[#6f4e37] px-5 py-3 rounded-2xl border border-gray-200 hover:shadow-lg
             transition-all duration-300 ">
             <img src={downloadIcon} alt="" className="w-4 h-4" />
-            <span className="font-medium text-white text-sm ">Export</span>
+            <span className="font-medium text-white text-sm ">Export PDF</span>
           </button>
-          
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-10">
@@ -308,8 +351,7 @@ const Dashboard = ({ darkMode }) => {
               </button>
               <button onClick={() => setActiveGraph("previous")}
                 className=" flex items-center gap-2 text-xs sm:text-sm ">
-                <div className={`
-            w-2.5 h-2.5 rounded-full
+                <div className={`  w-2.5 h-2.5 rounded-full
             ${activeGraph === "previous"
                     ? "bg-[#8b8b8b]"
                     : "bg-[#cfcfcf]"}`} ></div>
@@ -472,16 +514,7 @@ const Dashboard = ({ darkMode }) => {
                   strokeDashoffset="-75"
                 />
               </svg>
-
-              {/* CENTER */}
-              <div
-                className="
-          absolute
-          inset-6 sm:inset-7
-          bg-[#f7f7f7]
-          rounded-full
-          "
-              ></div>
+              <div   className=" absolute inset-6 sm:inset-7 bg-[#f7f7f7] rounded-full " ></div>
             </div>
           </div>
           <div className="mt-6 space-y-4">
@@ -530,10 +563,7 @@ const Dashboard = ({ darkMode }) => {
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
+              <input type="text" placeholder="Search products..." value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setActivePage(1); }}
                 className="bg-transparent outline-none text-sm w-full text-gray-700 placeholder:text-gray-400" />
             </div>
@@ -557,27 +587,27 @@ const Dashboard = ({ darkMode }) => {
                   PRODUCT
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
+               tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
                   NAME
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
+              tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
                   CATEGORY
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
+            tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
                   PRICE
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
+             tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
                   STOCK
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
+               tracking-[1px] sm:tracking-[2px] text-black font-bold whitespace-nowrap">
                   STATUS
                 </th>
                 <th className="px-4 sm:px-6 py-4 md:py-5 text-[12px] sm:text-[13px] md:text-[14px]
-    tracking-[1px] sm:tracking-[2px] text-black font-bold text-center whitespace-nowrap">
+             tracking-[1px] sm:tracking-[2px] text-black font-bold text-center whitespace-nowrap">
                   ACTIONS
                 </th>
               </tr>
@@ -623,8 +653,8 @@ const Dashboard = ({ darkMode }) => {
                       <button
                         onClick={() => {
                           if (item.raw) {
-                            setEditProduct(item);
-                            setEditForm({ ...item.raw });
+                            setEditData(item.raw);
+                            setActive("Edit Product");
                           } else {
                             alert("Static products cannot be edited");
                           }
@@ -633,8 +663,7 @@ const Dashboard = ({ darkMode }) => {
                         title="Edit">
                         <img src={pencilIcon} alt="Edit" className="w-4 h-4 opacity-70" />
                       </button>
-                      <button
-                        onClick={() => {
+                      <button onClick={() => {
                           if (item.raw) handleDelete(item.raw.id);
                           else alert("Static products cannot be deleted");
                         }}
@@ -686,11 +715,9 @@ const Dashboard = ({ darkMode }) => {
       {viewProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-2xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button
-              onClick={() => setViewProduct(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl">
-              ✕
-            </button>
+           <button onClick={() => setViewProduct(null)} className="absolute top-4 right-4">
+  <img src={closeIcon} alt="Close" className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform" />
+        </button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Product Details</h2>
             <div className="flex flex-col md:flex-row gap-6">
               <img src={viewProduct.image} alt="" className="w-48 h-48 rounded-2xl object-cover" />

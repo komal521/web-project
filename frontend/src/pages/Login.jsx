@@ -39,17 +39,17 @@ const Login = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f0ff] via-[#faf8f4] to-[#f0f4ff] flex flex-col items-center justify-center px-4 py-10 gap-0">
-      <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-xl border border-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-[#f5f0ff] via-[#faf8f4] to-[#f0f4ff] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 flex flex-col items-center justify-center px-4 py-10 gap-0">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-md p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-100 rounded-2xl mb-4">
             <svg className="w-7 h-7 text-[#6f4e37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <h2 className="text-3xl font-bold text-[#6f4e37] tracking-tight">Lumina</h2>
-          <h3 className="text-2xl font-bold mt-3 text-gray-900">Welcome Back</h3>
-          <p className="text-gray-500 mt-1 text-sm">Sign in to access your account</p>
+          <h2 className="text-3xl font-bold text-[#6f4e37] dark:text-[#d7a53f] tracking-tight">Web Hub</h2>
+          <h3 className="text-2xl font-bold mt-3 text-gray-900 dark:text-white">Welcome Back</h3>
+          <p className="text-gray-500 dark:text-gray-300 mt-1 text-sm">Sign in to access your account</p>
         </div>
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm text-center">
@@ -58,39 +58,39 @@ const Login = () => {
         )}
         <form className="space-y-5" onSubmit={handleLogin}>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               Email Address
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-amber-400 focus-within:bg-white transition">
-              <img src={gmailIcon} alt="" className="w-5 h-5 mr-3 opacity-60" />
+            <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-700 focus-within:border-amber-400 focus-within:bg-white dark:focus-within:bg-gray-800 transition">
+              <img src={gmailIcon} alt="" className="w-5 h-5 mr-3 opacity-60 dark:invert" />
               <input type="email" placeholder="name@example.com"
-                className="w-full outline-none bg-transparent text-gray-800 text-sm"
+                className="w-full outline-none bg-transparent text-gray-800 dark:text-white text-sm"
                 value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               Password
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 focus-within:border-amber-400 focus-within:bg-white transition">
-              <img src={lockIcon} alt="" className="w-5 h-5 mr-3 opacity-60" />
+            <div className="flex items-center border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-700 focus-within:border-amber-400 focus-within:bg-white dark:focus-within:bg-gray-800 transition">
+              <img src={lockIcon} alt="" className="w-5 h-5 mr-3 opacity-60 dark:invert" />
               <input type={showPass ? "text" : "password"}
                 placeholder="••••••••"
-                className="w-full outline-none bg-transparent text-gray-800 text-sm"
+                className="w-full outline-none bg-transparent text-gray-800 dark:text-white text-sm"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required/>
               <button type="button" onClick={() => setShowPass(!showPass)} className="ml-2">
-                <img src={viewIcon} alt="show" className={`w-5 h-5 transition ${showPass ? "opacity-80" : "opacity-40"}`} />
+                <img src={viewIcon} alt="show" className={`w-5 h-5 transition dark:invert ${showPass ? "opacity-80" : "opacity-40"}`} />
               </button>
             </div>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-gray-600 dark:text-gray-300 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 accent-[#6f4e37]" />
               Remember me
             </label>
-            <button type="button" className="text-[#6f4e37] font-semibold hover:text-[#5a3d2b] transition">
+            <button type="button" className="text-[#6f4e37] dark:text-[#d7a53f] font-semibold hover:text-[#5a3d2b] transition">
               Forgot Password?
             </button>
           </div>
@@ -107,27 +107,27 @@ const Login = () => {
             ) : "Sign In To Account"}
           </button>
           <div className="relative flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
             <span className="text-xs text-gray-400 font-medium">OR</span>
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
           </div>
           <button type="button"
-           className="w-full border border-gray-200 py-3 rounded-xl flex items-center justify-center gap-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition" >
+           className="w-full border border-gray-200 dark:border-gray-600 py-3 rounded-xl flex items-center justify-center gap-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition" >
             <img src={googleIcon} alt="" className="w-5 h-5" />
             Sign In With Google
           </button>
-          <div className="text-center text-sm text-gray-500 mt-4">
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-[#6f4e37] font-bold hover:text-[#5a3d2b] transition">
+            <Link to="/signup" className="text-[#6f4e37] dark:text-[#d7a53f] font-bold hover:text-[#5a3d2b] transition">
               Create Account
             </Link>
           </div>
         </form>
       </div>
-      <div className="mt-4 bg-white w-full max-w-md px-8 py-5 rounded-2xl shadow border border-gray-100 flex items-center justify-between gap-4">
+      <div className="mt-4 bg-white dark:bg-gray-800 w-full max-w-md px-8 py-5 rounded-2xl shadow border border-gray-100 dark:border-gray-700 flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-gray-800">New to Lumina?</p>
-          <p className="text-xs text-gray-500 mt-0.5">Create a free account and start shopping</p>
+          <p className="text-sm font-semibold text-gray-800 dark:text-white">New to Lumina?</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Create a free account and start shopping</p>
         </div>
         <Link
           to="/signup"

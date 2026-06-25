@@ -70,7 +70,6 @@ const voiceFeatured = [
       "I've owned many high-end products, but the Zenith Studio collection is on a whole different level of clarity and luxury.",
   },
 ];
-
 const voiceMore = [
   {
     img: m2,
@@ -107,17 +106,16 @@ const features = [
   { icon: returns,  title: "Easy Returns",     desc: "7 Days Return Policy" },
   { icon: premium,  title: "Premium Quality",  desc: "Certified Products" },
 ];
-
 const HeartIcon = ({ filled, onClick }) => (
   <button
     onClick={onClick}
-    className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
+    className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
     aria-label={filled ? "Remove from wishlist" : "Add to wishlist"} >
-    <svg className="w-5 h-5" fill={filled ? "#e11d48" : "none"}
-      stroke={filled ? "#e11d48" : "#6b7280"}
+    <svg className="w-5 h-5 text-gray-500 dark:text-gray-300" fill={filled ? "#e11d48" : "none"}
+      stroke="currentColor"
+      strokeWidth={2}
       viewBox="0 0 24 24" >
       <path strokeLinecap="round" strokeLinejoin="round"
-        strokeWidth={2}
         d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
   </button>
@@ -156,10 +154,10 @@ const TimelessHeart = ({ item }) => {
   };
   return (
     <button onClick={handleToggle}
-      className="absolute top-3 right-3 bg-white/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
+      className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur p-2 rounded-full shadow hover:scale-110 transition z-10"
       aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"} >
-      <svg className="w-4 h-4" fill={isWishlisted ? "#e11d48" : "none"}
-        stroke={isWishlisted ? "#e11d48" : "#6b7280"} strokeWidth="2"
+      <svg className="w-4 h-4 text-gray-500 dark:text-gray-300" fill={isWishlisted ? "#e11d48" : "none"}
+        stroke="currentColor" strokeWidth="2"
         viewBox="0 0 24 24"  >
         <path
           strokeLinecap="round"
@@ -169,7 +167,7 @@ const TimelessHeart = ({ item }) => {
     </button>
   );
 };
-const ProductCard = ({ id, img, tag, title, price, oldPrice, rating, showButton = false }) => {
+const ProductCard = ({ id, img, tag, title, price, oldPrice, rating, showButton = false, variants }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 useEffect(() => {
   const syncWishlist = () => {
@@ -216,26 +214,67 @@ const getWishlist = () => {
   return JSON.parse(localStorage.getItem("wishlist")) || [];
 };
   return (
-    <div className="bg-white rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative">
+    <div className="bg-white dark:bg-gray-800 rounded-[24px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative border dark:border-gray-700">
       <div className="relative overflow-hidden">
         <HeartIcon filled={isWishlisted} onClick={handleWishlist} />
         <img src={img} alt={title}
           className="w-full h-[240px] sm:h-[260px] object-cover group-hover:scale-105 transition duration-500"/>
-        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
+        <span className="absolute top-4 left-4 bg-white/90 dark:bg-gray-700 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-250 shadow pointer-events-none">
           {tag}
         </span>
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{title}</h3>
+        {variants && (() => {
+          try {
+            const parsed = JSON.parse(variants);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return (
+                <div className="mt-2 flex gap-1 flex-wrap max-h-12 overflow-hidden">
+                  {parsed.map((v, i) => (
+                    <span key={i} className="flex items-center text-[10px] bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-305 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-600">
+                      {v.colour && <span className="inline-block w-2 h-2 rounded-full mr-1 border border-gray-300" style={{backgroundColor: v.colour}}></span>}
+                      {v.name || v.size || "Variant"}
+                    </span>
+                  ))}
+                </div>
+              );
+            }
+          } catch(e) {}
+          return null;
+        })()}
         <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[#6f4e37] font-bold text-base">{price}</span>
+            <span className="text-[#6f4e37] dark:text-amber-100 font-bold text-base">{price}</span>
             {oldPrice && (
-              <span className="text-gray-400 line-through text-xs">{oldPrice}</span> )}
+              <span className="text-gray-400 dark:text-gray-500 line-through text-xs">{oldPrice}</span> )}
           </div>
           <div className="flex items-center gap-1">
-            <img src={star1} alt="star" className="w-4 h-4 object-contain" />
-            <span className="text-gray-500 text-sm font-medium">{rating}</span>
+            {rating && parseFloat(rating) > 0 ? (
+              <div className="flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform" onClick={async (e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 if(!id || id.toString().startsWith("static") || id.toString().startsWith("f")) {
+                    alert("Cannot rate static products"); return; }
+                 const newRating = prompt("Enter your rating (1-5):", "5");
+                 if(newRating && !isNaN(newRating) && parseFloat(newRating) >= 1 && parseFloat(newRating) <= 5) {
+                    try {
+                       await fetch(`http://localhost:5000/api/products/${id}/rate`, {
+                          method: "POST", headers: {"Content-Type": "application/json"},
+                          body: JSON.stringify({ rating: parseFloat(newRating) })
+                       });
+                       alert("Rating updated! Please refresh.");
+                    } catch(err) { console.log(err); }
+                 } else if (newRating) {
+                    alert("Please enter a valid rating between 1 and 5.");
+                 }
+              }}>
+                <img src={star1} alt="star" className="w-4 h-4 object-contain" />
+                <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">{rating}</span>
+              </div>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500 text-xs italic">not rating yet</span>
+            )}
           </div>
         </div>
         {showButton && (
@@ -257,14 +296,14 @@ const getWishlist = () => {
 const SectionHeader = ({ title, highlight, subtitle, btnLabel = "View All Collection" }) => (
   <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
     <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
         {title} <span className="text-[#6f4e37]">{highlight}</span>
       </h2>
-      <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{subtitle}</p>
     </div>
-    <button className="hidden sm:flex items-center gap-2 border border-black text-[#6f4e37] px-5 py-2 rounded-full hover:bg-amber-50 transition text-sm font-medium">
+    <button className="hidden sm:flex items-center gap-2 border border-black dark:border-white text-[#6f4e37] dark:text-amber-100 px-5 py-2 rounded-full hover:bg-amber-50 dark:hover:bg-gray-800 transition text-sm font-medium">
       {btnLabel}
-      <img src={arrow} alt="" className="w-4 h-4" />
+      <img src={arrow} alt="" className="w-4 h-4 dark:invert" />
     </button>
   </div>
 );
@@ -272,6 +311,12 @@ const ProductPage = () => {
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [activeReview, setActiveReview] = useState(0);
+  const [selectedCarat, setSelectedCarat] = useState("18kt");
+  const [selectedColor, setSelectedColor] = useState("Gold");
+  const [selectedSize, setSelectedSize] = useState("7");
+  const [selectedDiamond, setSelectedDiamond] = useState("VS-SI-GHI");
+  const [heroProduct, setHeroProduct] = useState(null);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [products, setProducts] = useState([]);
   const [dynamicTimeless, setDynamicTimeless] = useState([]);
   const [isMainWishlisted, setIsMainWishlisted] = useState(false);
@@ -281,6 +326,9 @@ const ProductPage = () => {
     .then((data) => {
       if (data.success) {
         setProducts(data.products);
+        if (data.products && data.products.length > 0) {
+          setHeroProduct(data.products[0]);
+        }
         const featured = data.products.filter(p => p.is_featured).slice(0, 4);
         const mappedFeatured = featured.map(p => ({
           img: p.image ? `http://localhost:5000/uploads/${p.image}` : c1,
@@ -303,7 +351,7 @@ const ProductPage = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-[#faf8f5] via-white to-[#faf8f5]">
+      <div className="min-h-screen bg-gradient-to-b from-[#faf8f5] via-white to-[#faf8f5] dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="w-full relative">
@@ -328,41 +376,98 @@ const ProductPage = () => {
                     window.dispatchEvent(new Event("wishlistUpdated"));
                   } catch (err) {
                     console.error(err); }  }}  />
-              <img  src={z2}  alt="Product"
+              <img src={heroProduct?.image ? `http://localhost:5000/uploads/${heroProduct.image}` : z2} alt="Product"
                 className="w-full rounded-[30px] shadow-xl object-cover max-h-[480px] lg:max-h-none" />
+              {heroProduct && heroProduct.tags && (
+                <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+                  {(() => {
+                    try {
+                      const parsedTags = JSON.parse(heroProduct.tags);
+                      return Array.isArray(parsedTags) ? parsedTags.map((tag, idx) => (
+                        <span key={idx} className="bg-white/90 dark:bg-gray-800/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-200 shadow">
+                          {tag}
+                        </span>
+                      )) : null;
+                    } catch { return null; }
+                  })()}
+                </div>
+              )}
             </div>
             <div className="w-full">
-              <span className="border border-amber-300 text-[#6f4e37] px-4 py-1 rounded-full text-sm font-medium">
-                New Collection 2025
+              <span className="border border-amber-300 dark:border-amber-500/30 text-[#6f4e37] dark:text-amber-100 px-4 py-1 rounded-full text-sm font-medium">
+                {heroProduct?.sub_category || "New Collection"}
               </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 leading-tight">
-                Mastery in{" "}
-                <span className="text-[#6f4e37]">Motion.</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 leading-tight text-gray-900 dark:text-white">
+                {heroProduct?.product_name || "Mastery in Motion."}
               </h1>
               <div className="flex items-center gap-1 mt-4 flex-wrap">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <img key={s} src={star} alt="" className="w-4 h-4" />
                 ))}
-                <span className="text-gray-500 ml-2 text-sm">(124 Reviews)</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-2 text-sm">(124 Reviews)</span>
               </div>
-              <p className="text-gray-600 mt-5 leading-7 text-sm sm:text-base">
-                Experience premium craftsmanship with modern design.
-                Built for style, durability and everyday comfort.
+              <p className="text-gray-600 dark:text-gray-305 mt-5 leading-7 text-sm sm:text-base">
+                {heroProduct?.description || "Experience premium craftsmanship with modern design. Built for style, durability and everyday comfort."}
               </p>
               <div className="mt-6 flex items-center gap-4 flex-wrap">
-                <span className="text-3xl sm:text-4xl font-bold text-black">₹1,450</span>
-                <span className="text-gray-400 line-through text-lg">₹1,850</span>
-                <span className="bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full font-semibold">22% OFF</span>
+                <span className="text-3xl sm:text-4xl font-bold text-black dark:text-white">
+                  ₹{(() => {
+                    let price = heroProduct?.base_price || 41297;
+                    if (heroProduct?.variants) {
+                      try {
+                        const parsed = JSON.parse(heroProduct.variants);
+                        const varPrice = parsed[selectedVariantIndex]?.price;
+                        if (varPrice) price += Number(varPrice);
+                      } catch {}
+                    }
+                    return price;
+                  })()}
+                </span>
               </div>
-              <div className="mt-8 flex items-center gap-5 flex-wrap">
-                <span className="font-medium">Quantity</span>
-                <div className="flex items-center border rounded-full px-4 py-2 gap-5">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 mb-6">Taxes included.</p>
+              
+              <div className="space-y-6">
+                {heroProduct && heroProduct.variants && (() => {
+                  try {
+                    const variants = JSON.parse(heroProduct.variants);
+                    if (Array.isArray(variants) && variants.length > 0) {
+                      return (
+                        <div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-medium">Select Variant</p>
+                          <div className="flex gap-3 flex-wrap">
+                            {variants.map((v, idx) => (
+                              <button key={idx} onClick={() => setSelectedVariantIndex(idx)} 
+                                className={`px-4 py-2 flex flex-col items-center justify-center rounded-xl border text-sm font-medium transition ${selectedVariantIndex === idx ? 'bg-[#0b1b3d] text-white border-[#0b1b3d] dark:bg-amber-600 dark:text-white dark:border-amber-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-350 border-gray-400 dark:border-gray-600 hover:border-black dark:hover:border-white'}`}>
+                                <span>{v.name || `Variant ${idx + 1}`}</span>
+                                {(v.size || v.colour) && (
+                                  <span className="text-xs opacity-80 mt-1">
+                                    {v.size && `Size: ${v.size}`} {v.colour && `Color: ${v.colour}`}
+                                  </span>
+                                )}
+                                {v.price && <span className="text-xs mt-1 text-[#d9a63d]">+₹{v.price}</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                  } catch {}
+                  return null;
+                })()}
+              </div>
+              <div className="mt-8 flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full border-[3px] border-green-100"></div>
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">1 IN STOCK</span>
+              </div>
+              <div className="mt-6 flex flex-col gap-2">
+                <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">Quantity</span>
+                <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 gap-5">
                   <button onClick={() => qty > 1 && setQty(qty - 1)}>
-                    <img src={minus} alt="" className="w-3" />
+                    <img src={minus} alt="" className="w-3 dark:invert" />
                   </button>
                   <span className="font-semibold w-5 text-center">{qty}</span>
                   <button onClick={() => setQty(qty + 1)}>
-                    <img src={add} alt="" className="w-3" />
+                    <img src={add} alt="" className="w-3 dark:invert" />
                   </button>
                 </div>
               </div>
@@ -370,49 +475,38 @@ const ProductPage = () => {
                 <button 
                   onClick={() => {
                     const cart = JSON.parse(localStorage.getItem("cart")) || [];
-                    cart.push({ img: z2, tag: "New Collection 2025", title: "Mastery in Motion.", price: "₹1,450" });
+                    cart.push({ img: z2, tag: "New Collection", title: "Mastery in Motion", price: "₹41,297.00", variant: `${selectedCarat} / ${selectedColor} / Size ${selectedSize}` });
                     localStorage.setItem("cart", JSON.stringify(cart));
-                    window.location.href = "/cart";
-                  }}
-                  className="flex items-center justify-center gap-3 bg-[#6f4e37] text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:scale-105 transition-all duration-300">
-                  Add To Bag
-                  <div className="bg-white/20 p-2 rounded-full">
-                    <img src={cart} alt="" className="w-4 h-4 brightness-0 invert" />
-                  </div>
+                    window.location.href = "/cart"; }}
+                  className="flex-1 bg-white dark:bg-gray-800 border border-[#0b1b3d] dark:border-amber-500 text-[#0b1b3d] dark:text-amber-100 px-8 py-4 rounded-md font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300">
+                  Add to cart
                 </button>
-                <button 
-                  onClick={() => {
+                <button  onClick={() => {
                     const cart = JSON.parse(localStorage.getItem("cart")) || [];
-                    cart.push({ img: z2, tag: "New Collection 2025", title: "Mastery in Motion.", price: "₹1,450" });
+                    cart.push({ img: z2, tag: "New Collection", title: "Mastery in Motion", price: "₹41,297.00", variant: `${selectedCarat} / ${selectedColor} / Size ${selectedSize}` });
                     localStorage.setItem("cart", JSON.stringify(cart));
-                    window.location.href = "/cart";
-                  }}
-                  className="bg-[#0c0c0c] text-white  px-8 py-4 rounded-full font-semibold transition-all">
-                  Buy It Now
+                    window.location.href = "/cart";}}
+                  className="flex-1 bg-[#0b1b3d] dark:bg-amber-600 text-white px-8 py-4 rounded-md font-semibold transition-all hover:bg-opacity-90 dark:hover:bg-amber-700">
+                  Buy it now
                 </button>
               </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-16">
             {features.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => setActive(index)}
+              <div key={index} onClick={() => setActive(index)}
                 className={`cursor-pointer rounded-3xl p-6 border transition-all duration-300 ${
                   active === index
                     ? "bg-[#6f4e37] text-white shadow-2xl scale-105 border-transparent"
-                    : "bg-white hover:border-black hover:shadow-lg"
-                }`} >
-                <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                    active === index ? "bg-white shadow-md" : "bg-[#6f4e37]"
-                  }`} >
-                  <img src={item.icon} alt="" className="w-8 h-8 object-contain" />
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-black dark:hover:border-white hover:shadow-lg"  }`} >
+                <div   className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                    active === index ? "bg-white shadow-md" : "bg-[#6f4e37] dark:bg-amber-600" }`} >
+                  <img src={item.icon} alt="" className="w-8 h-8 object-contain dark:invert" />
                 </div>
-                <h3 className={`font-semibold text-lg ${active === index ? "text-white" : "text-gray-800"}`}>
+                <h3 className={`font-semibold text-lg ${active === index ? "text-white" : "text-gray-800 dark:text-white"}`}>
                   {item.title}
                 </h3>
-                <p className={`text-sm mt-2 leading-6 ${active === index ? "text-white/90" : "text-gray-500"}`}>
+                <p className={`text-sm mt-2 leading-6 ${active === index ? "text-white/90" : "text-gray-500 dark:text-gray-400"}`}>
                   {item.desc}
                 </p>
               </div>
@@ -427,64 +521,65 @@ const ProductPage = () => {
    <ProductCard
      key={item.id}
      id={item.id}
-     img={`http://localhost:5000/uploads/${item.image}`}
+     img={item.image ? `http://localhost:5000/uploads/${item.image}` : z2}
      tag={item.category}
      title={item.product_name}
      price={`₹${item.base_price}`}
      oldPrice={`₹${item.discount_price}`}
      rating="4.8"
+     variants={item.variants}
      showButton={true}  />))}
           </div>
-                    <div className="flex justify-center mt-8 sm:hidden">
+             <div className="flex justify-center mt-8 sm:hidden">
             <button className="flex items-center gap-2 border border-amber-300 text-[#6f4e37] px-5 py-2 rounded-full text-sm">
               View All Collection
               <img src={arrow} alt="" className="w-4 h-4" />
             </button>
           </div>
         </div>
-        <div className="bg-gradient-to-b from-[#fdf9f0] to-white py-16">
+        <div className="bg-gradient-to-b from-[#fdf9f0] to-white dark:from-gray-900 dark:to-gray-850 py-16 border-t dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex justify-center mb-4">
               <span className="bg-[#6f4e37] text-black text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">
                 Best Sellers
               </span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-2">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 dark:text-white mb-2">
               Timeless{" "}
               <span className="text-[#6f4e37] italic">Masterpieces</span>
             </h2>
-            <p className="text-center text-gray-500 text-sm mb-10">
+            <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-10">
               Hand-curated selections that define enduring style.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {(dynamicTimeless.length > 0 ? dynamicTimeless : timelessProducts).map((item, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative" >
+                  className="bg-white dark:bg-gray-800 rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group w-full relative border dark:border-gray-700" >
                   <div className="relative overflow-hidden">
                     <TimelessHeart item={item} />
                     <img src={item.img} alt={item.title}
                       className="w-full h-[200px] sm:h-[220px] object-cover group-hover:scale-105 transition duration-500"/>
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow pointer-events-none">
+                    <span className="absolute top-3 left-3 bg-white/90 dark:bg-gray-700 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-250 shadow pointer-events-none">
                       {item.tag}
                     </span>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 text-sm">{item.title}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{item.title}</h3>
                     <div className="flex items-center gap-1 mt-1">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <img key={s} src={star1} alt="" className="w-3 h-3 object-contain" />
                       ))}
-                      <span className="text-gray-400 text-xs ml-1">{item.rating}</span>
+                      <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">{item.rating}</span>
                     </div>
                     <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
-                      <span className="text-[#6f4e37] font-bold">{item.price}</span>
+                      <span className="text-[#6f4e37] dark:text-amber-100 font-bold">{item.price}</span>
                       {item.oldPrice && (
-                        <span className="text-gray-400 line-through text-xs">{item.oldPrice}</span>
+                        <span className="text-gray-400 dark:text-gray-500 line-through text-xs">{item.oldPrice}</span>
                       )}
                     </div>
                     <div className="mt-3 flex items-center gap-2">
-                      <button className="flex-1 border border-black text-[#6f4e37] py-2 rounded-full text-xs font-semibold hover:bg-amber-50 transition">
+                      <button className="flex-1 border border-black dark:border-white text-[#6f4e37] dark:text-amber-100 py-2 rounded-full text-xs font-semibold hover:bg-amber-50 dark:hover:bg-gray-700 transition">
                         Quick View
                       </button>
                       <button 
@@ -494,8 +589,8 @@ const ProductPage = () => {
                           localStorage.setItem("cart", JSON.stringify(cartItems));
                           window.location.href = "/cart";
                         }}
-                        className="w-10 h-10 border border-black bg-amber-50 hover:bg-[#6f4e37] hover:text-white text-[#6f4e37] flex items-center justify-center rounded-full transition group-hover:shadow-md">
-                        <img src={cart} alt="cart" className="w-4 h-4 hover:invert group-hover:brightness-0 transition" />
+                        className="w-10 h-10 border border-black dark:border-white bg-amber-50 dark:bg-gray-700 hover:bg-[#6f4e37] dark:hover:bg-[#6f4e37] hover:text-white dark:hover:text-white text-[#6f4e37] dark:text-amber-100 flex items-center justify-center rounded-full transition group-hover:shadow-md">
+                        <img src={cart} alt="cart" className="w-4 h-4 hover:invert group-hover:brightness-0 dark:invert transition" />
                       </button>
                     </div>
                   </div>
@@ -504,14 +599,14 @@ const ProductPage = () => {
             </div>
           </div>
         </div>
-        <div className="py-16 bg-white">
+        <div className="py-16 bg-white dark:bg-gray-900 border-t dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
                 Voices of{" "}
                 <span className="text-[#6f4e37] italic">Luxury</span>
               </h2>
-              <p className="text-black text-sm sm:text-base mt-2">
+              <p className="text-black dark:text-gray-300 text-sm sm:text-base mt-2">
                 What our global community says about their AURA experience.
               </p>
             </div>
@@ -522,19 +617,17 @@ const ProductPage = () => {
       onClick={() => setActiveReview(i)}
       className={`border rounded-2xl p-5 shadow-sm cursor-pointer transition-all duration-300 ${
         activeReview === i
-          ? "bg-[#6f4e37]"
-          : "bg-white border-gray-100 hover:shadow-md"
-      }`} >
+          ? "bg-[#6f4e37] text-white"
+          : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-md"  }`} >
       <div className="flex gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((s) => (
           <img key={s}  src={star1}  alt=""
-            className="w-4 h-4 object-contain" />
-        ))}
+            className="w-4 h-4 object-contain" />  ))}
       </div>
       <p  className={`italic leading-relaxed text-xs ${
         activeReview === i
             ? "text-white"
-            : "text-gray-600"
+            : "text-gray-600 dark:text-gray-300"
         }`} >
         "{item.review}"
       </p>
@@ -542,7 +635,7 @@ const ProductPage = () => {
         <h4 className={`font-semibold text-xs ${
             activeReview === i
               ? "text-white"
-              : "text-gray-900"
+              : "text-gray-900 dark:text-white"
           }`}  >
           {item.name}
         </h4>
@@ -550,17 +643,17 @@ const ProductPage = () => {
           className={`text-xs uppercase tracking-wider ${
             activeReview === i
               ? "text-gray-200"
-              : "text-gray-500"
+              : "text-gray-500 dark:text-gray-400"
           }`}  >
           {item.role}
         </p>
       </div>
-    </div>
-  ))}
-</div>
+        </div>
+         ))}
+          </div>
           </div>
         </div>
-        <div className="py-14 bg-[#f8f5f2]">
+        <div className="py-14 bg-[#f8f5f2] dark:bg-gray-900 border-t dark:border-gray-850">
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <div className="bg-black rounded-3xl p-8 sm:p-12 text-center shadow-2xl">
               <span className="bg-black text-white text-xs font-bold px-4 py-1 rounded-full tracking-widest uppercase">

@@ -20,8 +20,7 @@ const register = (req, res) => {
       dob,
       password
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
+    VALUES (?, ?, ?, ?, ?, ?, ?)  `;
   db.query(
     sql,
     [
@@ -31,8 +30,7 @@ const register = (req, res) => {
       phone,
       gender,
       dob,
-      password,
-    ],
+      password, ],
     (err, result) => {
       if (err) {
         console.log("Register Error:", err);

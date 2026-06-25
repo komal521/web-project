@@ -17,11 +17,20 @@ import binIcon from "../assets/bin (1).png";
 import addIcon from "../assets/add.png";
 import AddProduct from "./AddProduct";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
-const ProductManagement = ({ darkMode }) => {
+import autoTable from "jspdf-autotable";
+import closeIcon from "../assets/close.png";
+const ProductManagement = ({ darkMode, setActive, setEditData }) => {
   const handleExportPDF = () => {
+    if (visibleProducts.length === 0) {
+      alert("No data available to download");
+      return;
+    }
     const doc = new jsPDF();
-    doc.text("Product Catalog Report", 14, 15);
+    doc.setFontSize(18);
+    doc.text("Product Catalog Full History Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}  |  Total Products: ${visibleProducts.length}`, 14, 26);
+    
     const tableColumn = ["SKU ID", "Product Name", "Category", "Brand", "Price", "Stock", "Status"];
     const tableRows = [];
     visibleProducts.forEach(product => {
@@ -37,12 +46,31 @@ const ProductManagement = ({ darkMode }) => {
       tableRows.push(rowData);
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 20,
+      startY: 32,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [111, 78, 55], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [252, 251, 248] },
     });
-    doc.save(`Product_Report_${new Date().toLocaleDateString()}.pdf`);
+    
+    const fileName = `Product_Report_Full_History_${new Date().toLocaleDateString().replace(/\//g, "-")}.pdf`;
+    const pdfBlob = doc.output('blob');
+    const formData = new FormData();
+    formData.append("report", pdfBlob, fileName);
+    fetch("http://localhost:5000/api/reports/save", { method: "POST", body: formData }).catch(console.log);
+
+    if (window.showSaveFilePicker) {
+      window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      }).then(handle => handle.createWritable())
+        .then(writable => { writable.write(pdfBlob); writable.close(); })
+        .catch(err => { if (err.name !== 'AbortError') doc.save(fileName); });
+    } else {
+      doc.save(fileName);
+    }
   };
 
   const [activePage, setActivePage] = useState(1);
@@ -266,11 +294,10 @@ const handleDelete = async (id) => {
       {viewProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className={`w-full max-w-2xl rounded-3xl p-6 ${darkMode ? "bg-[#1e293b]" : "bg-white"} shadow-2xl relative`}>
-            <button 
-              onClick={() => setViewProduct(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold text-xl" >
-              x
-            </button>
+          <button onClick={() => setViewProduct(null)} className="absolute top-4 right-4">
+  <img src={closeIcon} alt="Close"
+    className="w-5 h-5 cursor-pointer hover:scale-110 transition-transform"/>
+</button>
             <h2 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-black"}`}>Product Details</h2>
             <div className="flex flex-col md:flex-row gap-6">
               <img src={viewProduct.image} alt="" className="w-48 h-48 rounded-2xl object-cover" />
@@ -421,14 +448,14 @@ const handleDelete = async (id) => {
                           <button className="hover:scale-110 transition-all" onClick={() => setViewProduct(product)}>
                             <img src={showIcon} alt="" className="w-4 h-4 opacity-70" />
                           </button>
-                          <button className="hover:scale-110 transition-all" onClick={() => { if (product.raw) setEditingProduct(product.raw); else alert('Static products cannot be edited'); }}>
+                          <button className="hover:scale-110 transition-all" onClick={() => { if (product.raw) { setEditData(product.raw); setActive("Edit Product"); } else alert('Static products cannot be edited'); }}>
                             <img src={pencilIcon} alt="" className="w-4 h-4 opacity-70" />
                           </button>
                           <button className="hover:scale-110 transition-all" onClick={() => {
                            if (product.raw) {
                       handleDelete(product.raw.id); } else {
                    alert("Static products cannot be deleted");} }}>
-  <img src={binIcon} alt="" className="w-4 h-4 opacity-70" />
+               <img src={binIcon} alt="" className="w-4 h-4 opacity-70" />
                       </button>
                         </div>
                       </td>

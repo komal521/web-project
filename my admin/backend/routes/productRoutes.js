@@ -1,6 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "../uploads/"));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+const upload = multer({ storage });
+
 const ensureProductsTable = async () => {
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS products (
@@ -152,6 +165,97 @@ router.post("/create-product", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Product create nahi hua",
+      error: error.message,
+    });
+  }
+});
+router.put("/:id", upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      productName,
+      description,
+      sku,
+      brand,
+      category,
+      subCategory,
+      basePrice,
+      discountPrice,
+      stockQuantity,
+      isActive,
+      isFeatured,
+      weight,
+      length,
+      width,
+      height,
+      baseColor,
+      variants,
+      tags,
+    } = req.body;
+
+    let imageField = "";
+    if (req.file) {
+      imageField = req.file.filename;
+    }
+
+    let query;
+    let params;
+    if (req.file) {
+      query = `UPDATE products SET product_name=?, description=?, sku=?, brand=?, category=?, sub_category=?, base_price=?, discount_price=?, stock_quantity=?, is_active=?, is_featured=?, weight=?, length=?, width=?, height=?, base_color=?, variants=?, tags=?, images=? WHERE id=?`;
+      params = [
+        productName,
+        description || "",
+        sku,
+        brand,
+        category,
+        subCategory || "",
+        Number(basePrice || 0),
+        Number(discountPrice || 0),
+        Number(stockQuantity || 0),
+        isActive !== undefined ? Number(isActive) : 1,
+        isFeatured !== undefined ? Number(isFeatured) : 0,
+        Number(weight || 0),
+        Number(length || 0),
+        Number(width || 0),
+        Number(height || 0),
+        baseColor || "",
+        variants || "[]",
+        tags || "[]",
+        JSON.stringify([imageField]),
+        id,
+      ];
+    } else {
+      query = `UPDATE products SET product_name=?, description=?, sku=?, brand=?, category=?, sub_category=?, base_price=?, discount_price=?, stock_quantity=?, is_active=?, is_featured=?, weight=?, length=?, width=?, height=?, base_color=?, variants=?, tags=? WHERE id=?`;
+      params = [
+        productName,
+        description || "",
+        sku,
+        brand,
+        category,
+        subCategory || "",
+        Number(basePrice || 0),
+        Number(discountPrice || 0),
+        Number(stockQuantity || 0),
+        isActive !== undefined ? Number(isActive) : 1,
+        isFeatured !== undefined ? Number(isFeatured) : 0,
+        Number(weight || 0),
+        Number(length || 0),
+        Number(width || 0),
+        Number(height || 0),
+        baseColor || "",
+        variants || "[]",
+        tags || "[]",
+        id,
+      ];
+    }
+
+    await pool.execute(query, params);
+    res.json({ success: true, message: "Product updated successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Product update failed",
       error: error.message,
     });
   }
