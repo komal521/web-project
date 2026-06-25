@@ -1,10 +1,12 @@
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import searchIcon from "../assets/search.png";
 import sunIcon from "../assets/sun.png";
 import moonIcon from "../assets/moon.png";
 import notificationIcon from "../assets/notification.png";
 import messageIcon from "../assets/msg.png";
 import userImg from "../assets/u2.jpg";
-import { useState, useEffect } from "react";
+import logo from "../assets/logo.png";
 const Navbar = ({ setOpen, darkMode, setDarkMode, setActive }) => {
   const [searchVal, setSearchVal] = useState("");
   const [adminName, setAdminName] = useState("Julian Vane");
@@ -27,11 +29,14 @@ const Navbar = ({ setOpen, darkMode, setDarkMode, setActive }) => {
           : "bg-white/95 border-gray-200 text-black"
         } `} >
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <button onClick={() => setOpen(true)}
-          className={`  md:hidden flex-shrink-0 flex items-center justify-center
+      <Link to="/home" className="flex items-center mr-2">
+        <img src={logo} alt="Admin Logo" className="h-8 w-auto" />
+      </Link>
+      <button onClick={() => setOpen(true)}
+        className={`  md:hidden flex-shrink-0 flex items-center justify-center
             w-9 h-9 rounded-xl shadow-md transition-all duration-300
             ${darkMode ? "bg-gray-800 hover:bg-gray-700" : "bg-[#111] hover:bg-gray-800"} `}
-          aria-label="Open menu"  >
+        aria-label="Open menu"  >
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
           </svg>

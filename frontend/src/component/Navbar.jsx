@@ -53,7 +53,10 @@ const Navbar = () => {
   <img src={logo} alt="Logo" className="w-400 h-[60px] object-contain"  />
             </Link>
 <div className="hidden md:flex items-center mr-4">
-  <img  src={logo}  alt="Logo"  className="w-400 h-[70px] object-contain"/></div>
+  <Link to="/home" className="flex items-center">
+    <img src={logo} alt="Logo" className="w-400 h-[70px] object-contain" />
+  </Link>
+</div></div>
             <nav className="hidden md:flex items-center gap-7">
               <Link to="/home" className={navLink("/home")}>Home</Link>
               <div className="relative group cursor-pointer py-2">
