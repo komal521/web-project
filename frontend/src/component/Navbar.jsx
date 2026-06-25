@@ -49,16 +49,16 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
-           <Link to="/home" className="md:hidden flex items-center gap-2">
+           <Link to="/" className="md:hidden flex items-center gap-2">
   <img src={logo} alt="Logo" className="w-400 h-[60px] object-contain"  />
             </Link>
 <div className="hidden md:flex items-center mr-4">
-  <Link to="/home" className="flex items-center">
+  <Link to="/" className="flex items-center">
     <img src={logo} alt="Logo" className="w-400 h-[70px] object-contain" />
   </Link>
-</div></div>
+</div>
             <nav className="hidden md:flex items-center gap-7">
-              <Link to="/home" className={navLink("/home")}>Home</Link>
+              <Link to="/" className={navLink("/")}>Home</Link>
               <div className="relative group cursor-pointer py-2">
               <span
   className={`flex items-center gap-1 transition-colors duration-200 ${
@@ -177,7 +177,7 @@ const Navbar = () => {
             </div>
           </div>
         )}
-      </div>
+      
     </header>
   );
 };
