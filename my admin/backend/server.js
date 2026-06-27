@@ -19,7 +19,7 @@ app.use("/api/brands", brandRoutes);
 app.use("/api/auth", authRoutes);
 const profileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "uploads/"));
+    cb(null, path.join(__dirname, "../../backend/uploads/"));
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
@@ -450,31 +450,28 @@ app.get("/api/report/cards", async (req, res) => {
 app.get("/api/report/recent", async (req, res) => {
   try {
     const [results] = await db.query(`
-      SELECT 
-        id,
-        customer_name AS customer,
-        total_amount AS revenue,
-        status,
-        created_at AS date
-      FROM orders
-      ORDER BY id DESC
-      LIMIT 10 `);
+      (SELECT id, product_name AS name, base_price AS revenue, status, created_at AS date, 'Product' AS type
+       FROM products)
+      UNION ALL
+      (SELECT id, category_name AS name, 0 AS revenue, status, created_at AS date, 'Category' AS type
+       FROM categories)
+      ORDER BY date DESC
+      LIMIT 10
+    `);
     const formatted = results.map(o => ({
-      id: `#REP-${o.id}`,
-      client: o.customer,
-      revenue: `₹${Number(o.revenue || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
-      status: o.status || "Pending",
-      color: o.status === "Paid" || o.status === "Completed" 
-        ? "bg-emerald-100 text-emerald-800" 
-        : o.status === "Pending" 
-        ? "bg-amber-100 text-amber-800" 
-        : "bg-rose-100 text-rose-800",
+      id: `#${o.type === 'Product' ? 'PRD' : 'CAT'}-${o.id}`,
+      client: o.name,
+      revenue: o.type === 'Product' ? `₹${Number(o.revenue || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : '-',
+      status: o.status || "Active",
+      color: o.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800",
       date: o.date ? new Date(o.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" }) : "",
     }));
-    res.json({ success: true, recentReports: formatted }); } catch (error) {
+    res.json({ success: true, recentReports: formatted });
+  } catch (error) {
     console.error("Recent report fetch error:", error);
     res.status(500).json({ success: false, message: "Error fetching recent reports" });
-  }});
+  }
+});
 app.get("/api/revenue-graph", async (req, res) => {
   try {
     const [results] = await db.query(`
@@ -651,6 +648,53 @@ app.get("/api/performance", async (req, res) => {
     res.status(500).json({ success: false, message: "Performance fetch failed" });
   }
 });
+const ensureColorsTable = async () => {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS colors (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      color_name VARCHAR(255) NOT NULL,
+      hex_code VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+};
+
+app.get("/api/colors", async (req, res) => {
+  try {
+    await ensureColorsTable();
+    const [colors] = await db.query("SELECT * FROM colors ORDER BY created_at DESC");
+    res.json({ success: true, colors });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error fetching colors" });
+  }
+});
+
+app.post("/api/colors", async (req, res) => {
+  try {
+    await ensureColorsTable();
+    const { colorName, hexCode } = req.body;
+    if (!colorName) return res.status(400).json({ success: false, message: "Color name required" });
+    await db.query("INSERT INTO colors (color_name, hex_code) VALUES (?, ?)", [colorName, hexCode || ""]);
+    res.json({ success: true, message: "Color added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error adding color" });
+  }
+});
+
+app.delete("/api/colors/:id", async (req, res) => {
+  try {
+    await ensureColorsTable();
+    const { id } = req.params;
+    await db.query("DELETE FROM colors WHERE id = ?", [id]);
+    res.json({ success: true, message: "Color deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error deleting color" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Running On Port ${PORT}`);
 });

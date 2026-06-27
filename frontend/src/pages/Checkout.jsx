@@ -18,7 +18,7 @@ const Checkout = () => {
     city: "",
     state: "",
     pincode: "",
-    payment_method: "upi",
+    payment_method: "cod",
     card_number: "",
     expiry_date: "",
     cvv: ""
@@ -165,48 +165,7 @@ const Checkout = () => {
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-gray-850 dark:text-white tracking-tight font-serif">Payment Method</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                  <label className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
-                      formData.payment_method === "card"
-                        ? "border-[#6f4e37] bg-amber-50/10 dark:bg-amber-900/10 shadow-sm ring-1 ring-[#6f4e37]"
-                        : "border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`} >
-                    <input type="radio" name="payment_method" value="card" checked={formData.payment_method === "card"}
-                      onChange={handleChange} className="sr-only" />
-                    <div className="w-full flex justify-between items-center">
-                      <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-gray-700 flex items-center justify-center border border-amber-100 dark:border-gray-600">
-                        <img src={cardIcon} alt="Card" className="w-5 h-5 dark:invert" />
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.payment_method === 'card' ? 'border-[#6f4e37]' : 'border-gray-300 dark:border-gray-600'}`}>
-                        {formData.payment_method === 'card' && <div className="w-3 h-3 rounded-full bg-[#6f4e37]" />}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-gray-805 dark:text-white">Credit / Debit Card</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Visa, Mastercard, Amex</p>
-                    </div>
-                  </label>
-                  <label
-                    className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
-                      formData.payment_method === "upi"
-                        ? "border-[#6f4e37] bg-amber-50/10 dark:bg-amber-900/10 shadow-sm ring-1 ring-[#6f4e37]"
-                        : "border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`} >
-                    <input  type="radio"  name="payment_method"  value="upi"  checked={formData.payment_method === "upi"}
-                      onChange={handleChange}  className="sr-only" />
-                    <div className="w-full flex justify-between items-center">
-                      <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-gray-700 flex items-center justify-center border border-amber-100 dark:border-gray-600">
-                        <img src={upiIcon} alt="UPI" className="w-5 h-5 dark:invert" />
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.payment_method === 'upi' ? 'border-[#6f4e37]' : 'border-gray-300 dark:border-gray-600'}`}>
-                        {formData.payment_method === 'upi' && <div className="w-3 h-3 rounded-full bg-[#6f4e37]" />}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-gray-805 dark:text-white">UPI Payment</p>
-                      <p className="text-[11px] text-gray-400 mt-1">Google Pay, Apple Pay</p>
-                    </div>
-                  </label>
+                <div className="grid grid-cols-1 gap-5 mb-8">
                   <label
                     className={`relative cursor-pointer border rounded-2xl p-5 flex flex-col items-start gap-5 transition-all ${
                       formData.payment_method === "cod"
@@ -228,38 +187,7 @@ const Checkout = () => {
                     </div>
                   </label>
                 </div>
-                {formData.payment_method === "card" && (
-                  <div className="space-y-5 pt-5 border-t border-gray-100 dark:border-gray-700 animate-fadeIn">
-                    <div>
-                      <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Card Number</label>
-                      <div className="relative">
-                        <input  type="text"  name="card_number"  required={formData.payment_method === "card"}
-                          value={formData.card_number} onChange={handleChange}
-                          className="w-full border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 text-gray-805 dark:text-white rounded-xl pl-12 pr-5 py-4 text-base outline-none focus:bg-white dark:focus:bg-gray-800 focus:border-[#6f4e37] transition-all"
-                          placeholder="0000 0000 0000 0000" />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">
-                          <img src={cardIcon} alt="Card" className="w-5 h-5 dark:invert" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-5">
-                      <div>
-                        <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">Expiry Date</label>
-                        <input type="text" name="expiry_date" required={formData.payment_method === "card"}
-                          value={formData.expiry_date} onChange={handleChange}
-                          className="w-full border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 text-gray-855 dark:text-white rounded-xl px-5 py-4 text-base outline-none focus:bg-white dark:focus:bg-gray-800 focus:border-[#6f4e37] transition-all"
-                          placeholder="MM/YY"  />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-gray-400 uppercase tracking-widest font-bold block mb-2">CVV</label>
-                        <input type="password" name="cvv" maxLength="3" required={formData.payment_method === "card"}
-                          value={formData.cvv} onChange={handleChange}
-                          className="w-full border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 text-gray-855 dark:text-white rounded-xl px-5 py-4 text-base outline-none focus:bg-white dark:focus:bg-gray-800 focus:border-[#6f4e37] transition-all"
-                          placeholder="123"/>
-                      </div>
-                    </div>
-                  </div>
-                )}
+
               </div>
               <div className="pt-2">
                 <button type="submit" disabled={submitting}

@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const db = require("./config/db");
 function runMigrations() {
   const alterQueries = [
+    "CREATE TABLE IF NOT EXISTS colors (id INT AUTO_INCREMENT PRIMARY KEY, color_name VARCHAR(255) NOT NULL, hex_code VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
     "ALTER TABLE orders ADD COLUMN city VARCHAR(255) NULL",
     "ALTER TABLE orders ADD COLUMN state VARCHAR(255) NULL",
     "ALTER TABLE orders ADD COLUMN pincode VARCHAR(50) NULL",
@@ -184,6 +185,10 @@ app.post("/api/auth/login", (req, res) => {
           fullName: user.full_name,
           username: user.username,
           email: user.email,
+          phone: user.phone,
+          address: user.address,
+          gender: user.gender,
+          dob: user.dob,
           profileImage: user.profile_image ? `http://localhost:5000/uploads/${user.profile_image}` : null,
         }
       });
@@ -395,9 +400,14 @@ app.post("/api/products", upload.single("image"), (req, res) => {
   );
 });
 app.get("/api/products", (req, res) => {
-  const { minPrice, maxPrice, brands, categories } = req.query;
+  const { minPrice, maxPrice, brands, categories, searchQuery } = req.query;
   let sql = "SELECT * FROM products WHERE 1=1";
   const params = [];
+
+  if (searchQuery) {
+    sql += " AND product_name LIKE ?";
+    params.push(`%${searchQuery}%`);
+  }
 
   if (minPrice) {
     sql += " AND base_price >= ?";
@@ -490,6 +500,77 @@ app.delete("/api/products/:id", (req, res) => {
     res.status(200).json({ success: true, message: "Product deleted successfully" });
   });
 });
+app.get("/api/categories", (req, res) => {
+  const sql = "SELECT * FROM categories ORDER BY id DESC";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("Categories fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to fetch categories" });
+    }
+    res.status(200).json({ success: true, categories: results });
+  });
+});
+
+app.post("/api/categories", upload.single("image"), (req, res) => {
+  const { category_name, slug, parent_category, description, seo_title, seo_description, status, featured, sitemap, global_search, breadcrumb } = req.body;
+  const image = req.file ? req.file.filename : "";
+  const sql = `
+    INSERT INTO categories (
+      category_name, slug, parent_category, description, seo_title, seo_description, status, featured, sitemap, global_search, breadcrumb, image
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  db.query(sql, [category_name, slug || "", parent_category || "", description || "", seo_title || "", seo_description || "", status || "Active", featured || 0, sitemap || 1, global_search || 1, breadcrumb || "", image], (err) => {
+    if (err) {
+      console.log("Category insert error:", err);
+      return res.status(500).json({ success: false, message: "Server Error" });
+    }
+    res.status(201).json({ success: true, message: "Category Added Successfully" });
+  });
+});
+
+app.put("/api/categories/:id", upload.single("image"), (req, res) => {
+  const { id } = req.params;
+  const { category_name, slug, parent_category, description, seo_title, seo_description, status, featured, sitemap, global_search, breadcrumb } = req.body;
+  let sql = "";
+  let params = [];
+  if (req.file) {
+    const image = req.file.filename;
+    sql = `UPDATE categories SET category_name=?, slug=?, parent_category=?, description=?, seo_title=?, seo_description=?, status=?, featured=?, sitemap=?, global_search=?, breadcrumb=?, image=? WHERE id=?`;
+    params = [category_name, slug || "", parent_category || "", description || "", seo_title || "", seo_description || "", status || "Active", featured !== undefined ? Number(featured) : 0, sitemap !== undefined ? Number(sitemap) : 1, global_search !== undefined ? Number(global_search) : 1, breadcrumb || "", image, id];
+  } else {
+    sql = `UPDATE categories SET category_name=?, slug=?, parent_category=?, description=?, seo_title=?, seo_description=?, status=?, featured=?, sitemap=?, global_search=?, breadcrumb=? WHERE id=?`;
+    params = [category_name, slug || "", parent_category || "", description || "", seo_title || "", seo_description || "", status || "Active", featured !== undefined ? Number(featured) : 0, sitemap !== undefined ? Number(sitemap) : 1, global_search !== undefined ? Number(global_search) : 1, breadcrumb || "", id];
+  }
+  db.query(sql, params, (err) => {
+    if (err) {
+      console.log("Category update error:", err);
+      return res.status(500).json({ success: false, message: "Update Failed" });
+    }
+    res.json({ success: true, message: "Category updated successfully" });
+  });
+});
+
+app.delete("/api/categories/:id", (req, res) => {
+  const { id } = req.params;
+  db.query("DELETE FROM categories WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.log("Category delete error:", err);
+      return res.status(500).json({ success: false, message: "Delete Failed" });
+    }
+    res.json({ success: true, message: "Category Deleted Successfully" });
+  });
+});
+app.get("/api/brands", (req, res) => {
+  const sql = "SELECT * FROM brands ORDER BY id DESC";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("Brands fetch error:", err);
+      return res.status(500).json({ success: false, message: "Failed to fetch brands" });
+    }
+    res.status(200).json({ success: true, brands: results });
+  });
+});
+
 app.get("/api/product/cards", (req, res) => {
   const sql = `
     SELECT 
@@ -771,32 +852,28 @@ app.get("/api/order/cards", (req, res) => {
 });
 app.get("/api/report/recent", (req, res) => {
   const sql = `
-    SELECT 
-      id,
-      customer_name,
-      total_amount,
-      status,
-      created_at,
-      payment_method,
-      items
-    FROM orders
-    ORDER BY id DESC
-    LIMIT 5`;
+    (SELECT id, product_name AS name, base_price AS revenue, is_active AS item_status, created_at AS date, 'Product' AS type
+     FROM products)
+    UNION ALL
+    (SELECT id, category_name AS name, 0 AS revenue, status AS item_status, created_at AS date, 'Category' AS type
+     FROM categories)
+    ORDER BY date DESC
+    LIMIT 10
+  `;
   db.query(sql, (err, results) => {
     if (err) {
       console.log("Recent report fetch error:", err);
       return res.status(500).json({ success: false, message: "Failed to fetch recent reports" });
     }
     const data = (results || []).map((o) => ({
-      id: `#REP-${o.id}`,
-      customer: o.customer_name,
-      revenue: `₹${Number(o.total_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
-      status: o.status || "Pending",
-      date: o.created_at ? new Date(o.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" }) : "",
-      payment_method: o.payment_method || "unknown",
-      items: o.items || ""
+      id: `#${o.type === 'Product' ? 'PRD' : 'CAT'}-${o.id}`,
+      client: o.name,
+      revenue: o.type === 'Product' ? `₹${Number(o.revenue || 0).toLocaleString("en-IN")}` : '-',
+      status: o.type === 'Product' ? (o.item_status ? 'Active' : 'Inactive') : (o.item_status || 'Active'),
+      color: (o.type === 'Product' ? o.item_status : (o.item_status === 'Active')) ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800",
+      date: o.date ? new Date(o.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" }) : "",
     }));
-    res.json({ success: true, recentReports: data });
+    res.status(200).json({ success: true, recentReports: data });
   });
 });
 app.get("/api/report/cards", (req, res) => {
@@ -971,12 +1048,13 @@ app.get("/api/brands", (req, res) => {
 });
 app.post("/api/brands", upload.single("image"), (req, res) => {
   ensureBrandsTable(() => {
-    const { brand_name, slug, description, status, website } = req.body;
+    const { brand_name, brandName, slug, description, status, website } = req.body;
+    const finalBrandName = brand_name || brandName;
     const image = req.file ? req.file.filename : null;
-    if (!brand_name) return res.status(400).json({ success: false, message: "Brand name required" });
+    if (!finalBrandName) return res.status(400).json({ success: false, message: "Brand name required" });
     db.query(
       "INSERT INTO brands (brand_name, slug, description, image, status, website) VALUES (?, ?, ?, ?, ?, ?)",
-      [brand_name, slug || "", description || "", image, status || "Active", website || ""],
+      [finalBrandName, slug || "", description || "", image, status || "Active", website || ""],
       (err, result) => {
         if (err) { console.log("Brand insert error:", err); return res.status(500).json({ success: false, message: "Failed to add brand" }); }
         res.status(201).json({ success: true, message: "Brand added successfully", id: result.insertId });
@@ -987,15 +1065,16 @@ app.post("/api/brands", upload.single("image"), (req, res) => {
 app.put("/api/brands/:id", upload.single("image"), (req, res) => {
   ensureBrandsTable(() => {
     const { id } = req.params;
-    const { brand_name, slug, description, status, website } = req.body;
+    const { brand_name, brandName, slug, description, status, website } = req.body;
+    const finalBrandName = brand_name || brandName;
     const image = req.file ? req.file.filename : null;
     let sql, params;
     if (image) {
       sql = "UPDATE brands SET brand_name=?, slug=?, description=?, image=?, status=?, website=? WHERE id=?";
-      params = [brand_name, slug || "", description || "", image, status || "Active", website || "", id];
+      params = [finalBrandName, slug || "", description || "", image, status || "Active", website || "", id];
     } else {
       sql = "UPDATE brands SET brand_name=?, slug=?, description=?, status=?, website=? WHERE id=?";
-      params = [brand_name, slug || "", description || "", status || "Active", website || "", id];
+      params = [finalBrandName, slug || "", description || "", status || "Active", website || "", id];
     }
     db.query(sql, params, (err) => {
       if (err) return res.status(500).json({ success: false, message: "Failed to update brand" });
@@ -1004,11 +1083,32 @@ app.put("/api/brands/:id", upload.single("image"), (req, res) => {
   });
 });
 app.delete("/api/brands/:id", (req, res) => {
-  ensureBrandsTable(() => {
-    db.query("DELETE FROM brands WHERE id = ?", [req.params.id], (err) => {
-      if (err) return res.status(500).json({ success: false, message: "Delete failed" });
-      res.status(200).json({ success: true, message: "Brand deleted successfully" });
-    });
+  db.query("DELETE FROM brands WHERE id = ?", [req.params.id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: "Error deleting brand" });
+    res.json({ success: true, message: "Brand deleted successfully" });
+  });
+});
+
+app.get("/api/colors", (req, res) => {
+  db.query("SELECT * FROM colors ORDER BY created_at DESC", (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: "Error fetching colors" });
+    res.json({ success: true, colors: results });
+  });
+});
+
+app.post("/api/colors", (req, res) => {
+  const { colorName, hexCode } = req.body;
+  if (!colorName) return res.status(400).json({ success: false, message: "Color name required" });
+  db.query("INSERT INTO colors (color_name, hex_code) VALUES (?, ?)", [colorName, hexCode], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: "Error adding color" });
+    res.json({ success: true, message: "Color added successfully" });
+  });
+});
+
+app.delete("/api/colors/:id", (req, res) => {
+  db.query("DELETE FROM colors WHERE id = ?", [req.params.id], (err, result) => {
+    if (err) return res.status(500).json({ success: false, message: "Error deleting color" });
+    res.json({ success: true, message: "Color deleted successfully" });
   });
 });
 const ensureFeaturesTable = (cb) => {
@@ -1309,146 +1409,127 @@ app.post("/api/products/:id/rate", (req, res) => {
     });
   });
 });
-const ensureSettingsTables = async () => {
-  await db.promise().query(`
-    CREATE TABLE IF NOT EXISTS admin_settings (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      setting_key VARCHAR(100) NOT NULL UNIQUE,
-      setting_value TEXT,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) `);
-  await db.promise().query(`
-    CREATE TABLE IF NOT EXISTS admin_sessions (
+const ensureSettingsTables = (cb) => {
+  db.query(`CREATE TABLE IF NOT EXISTS admin_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  )`, () => {
+    db.query(`CREATE TABLE IF NOT EXISTS admin_sessions (
       id INT AUTO_INCREMENT PRIMARY KEY,
       device_info VARCHAR(255),
       browser VARCHAR(100),
       ip_address VARCHAR(50),
       is_current TINYINT(1) DEFAULT 0,
       logged_in_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )  `);};
-app.get("/api/settings", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    const [rows] = await db.promise().query("SELECT setting_key, setting_value FROM admin_settings");
-    const settings = {};
-    rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
-    res.json({ success: true, settings }); } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to load settings" });
-  }});
-app.post("/api/settings", async (req, res) => {
-  try {
-    await ensureSettingsTables();
+    )`, () => { if (cb) cb(); });
+  });
+};
+app.get("/api/settings", (req, res) => {
+  ensureSettingsTables(() => {
+    db.query("SELECT setting_key, setting_value FROM admin_settings", (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to load settings" });
+      const settings = {};
+      (rows || []).forEach(r => { settings[r.setting_key] = r.setting_value; });
+      res.json({ success: true, settings });
+    });
+  });
+});
+app.post("/api/settings", (req, res) => {
+  ensureSettingsTables(() => {
     const { settings } = req.body;
-    for (const [key, value] of Object.entries(settings || {})) {
-      await db.promise().query(
-        `INSERT INTO admin_settings (setting_key, setting_value) VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [key, value]  ); }
-    res.json({ success: true, message: "Settings saved" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to save settings" });
-  }});
-app.put("/api/settings/password", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    const { currentPassword, newPassword } = req.body;
-    const [rows] = await db.promise().query(
-      "SELECT setting_value FROM admin_settings WHERE setting_key = 'password'"
-    );
-    const stored = rows.length > 0 ? rows[0].setting_value : "admin123";
-    if (stored !== currentPassword) {
-      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+    const entries = Object.entries(settings || {});
+    if (entries.length === 0) return res.json({ success: true, message: "Settings saved" });
+    let done = 0;
+    entries.forEach(([key, value]) => {
+      db.query(
+        "INSERT INTO admin_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+        [key, value], () => {
+          done++;
+          if (done === entries.length) res.json({ success: true, message: "Settings saved" });
+        });
+    });
+  });
+});
+app.put("/api/settings/password", (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  ensureSettingsTables(() => {
+    db.query("SELECT setting_value FROM admin_settings WHERE setting_key = 'password'", (err, rows) => {
+      const stored = rows && rows.length > 0 ? rows[0].setting_value : "admin123";
+      if (stored !== currentPassword) return res.status(400).json({ success: false, message: "Current password is incorrect" });
+      db.query(
+        "INSERT INTO admin_settings (setting_key, setting_value) VALUES ('password', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
+        [newPassword], (err2) => {
+          if (err2) return res.status(500).json({ success: false, message: "Failed to update password" });
+          res.json({ success: true, message: "Password updated successfully" });
+        });
+    });
+  });
+});
+app.post("/api/settings/devices/signout", (req, res) => {
+  const { device_info, browser } = req.body;
+  ensureSettingsTables(() => {
+    db.query("DELETE FROM admin_sessions WHERE device_info = ? AND browser = ? AND is_current = 1", [device_info, browser], (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Sign out failed" });
+      res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+});
+app.get("/api/settings/devices", (req, res) => {
+  ensureSettingsTables(() => {
+    db.query("SELECT * FROM admin_sessions ORDER BY is_current DESC, logged_in_at DESC", (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to load devices" });
+      res.json({ success: true, devices: rows || [] });
+    });
+  });
+});
+app.post("/api/settings/devices", (req, res) => {
+  const { device_info, browser, ip_address } = req.body;
+  ensureSettingsTables(() => {
+    db.query("UPDATE admin_sessions SET is_current = 0", () => {
+      db.query("SELECT id FROM admin_sessions WHERE device_info = ? AND browser = ?", [device_info, browser], (err, existing) => {
+        if (existing && existing.length > 0) {
+          db.query("UPDATE admin_sessions SET is_current = 1, logged_in_at = NOW(), ip_address = ? WHERE id = ?", [ip_address, existing[0].id], () => {
+            res.json({ success: true, message: "Device registered" });
+          });
+        } else {
+          db.query("INSERT INTO admin_sessions (device_info, browser, ip_address, is_current) VALUES (?, ?, ?, 1)", [device_info, browser, ip_address], () => {
+            res.json({ success: true, message: "Device registered" });
+          });
+        }
+      });
+    });
+  });
+});
+app.delete("/api/settings/devices/others", (req, res) => {
+  ensureSettingsTables(() => {
+    db.query("DELETE FROM admin_sessions WHERE is_current = 0", (err) => {
+      if (err) return res.status(500).json({ success: false, message: "Failed to sign out devices" });
+      res.json({ success: true, message: "Signed out all other devices" });
+    });
+  });
+});
+app.get("/api/revenue-graph", (req, res) => {
+  const sql = `
+    SELECT MONTH(created_at) as month, SUM(total_amount) as revenue
+    FROM orders
+    WHERE YEAR(created_at) = YEAR(CURDATE())
+    GROUP BY MONTH(created_at)
+    ORDER BY month`;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("Revenue graph error:", err);
+      return res.status(500).json({ success: false, message: "Revenue graph failed" });
     }
-    const [emailRows] = await db.promise().query(
-      "SELECT setting_value FROM admin_settings WHERE setting_key = 'email'"
-    );
-    const email = emailRows.length > 0 ? emailRows[0].setting_value : "admin@example.com";
-    const [userRows] = await db.promise().query(
-      "SELECT * FROM users WHERE email = ? OR role = 'Admin' ORDER BY id ASC LIMIT 1",
-      [email]
-    );
-    if (userRows.length > 0) {
-      const adminUser = userRows[0];
-      await db.promise().query(
-        "UPDATE users SET password = ? WHERE id = ?",
-        [newPassword, adminUser.id]
-      );
-    }
-    await db.promise().query(
-      `INSERT INTO admin_settings (setting_key, setting_value) VALUES ('password', ?)
-       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-      [newPassword]
-    );
-    res.json({ success: true, message: "Password updated successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to update password" });
-  }
+    const months = Array(12).fill(0);
+    (results || []).forEach(r => {
+      months[r.month - 1] = Number(r.revenue) || 0;
+    });
+    res.status(200).json({ success: true, data: months });
+  });
 });
-app.post("/api/settings/devices/signout", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    const { device_info, browser } = req.body;
-    await db.promise().query(
-      "DELETE FROM admin_sessions WHERE device_info = ? AND browser = ? AND is_current = 1",
-      [device_info, browser]
-    );
-    res.json({ success: true, message: "Logged out successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to sign out current device" });
-  }
-});
-app.get("/api/settings/devices", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    const [rows] = await db.promise().query(
-      "SELECT * FROM admin_sessions ORDER BY is_current DESC, logged_in_at DESC"
-    );
-    res.json({ success: true, devices: rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to load devices" });
-  }
-});
-app.post("/api/settings/devices", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    const { device_info, browser, ip_address } = req.body;
-    await db.promise().query("UPDATE admin_sessions SET is_current = 0");
-    const [existing] = await db.promise().query(
-      "SELECT id FROM admin_sessions WHERE device_info = ? AND browser = ?",
-      [device_info, browser]
-    );
-    if (existing.length > 0) {
-      await db.promise().query(
-        "UPDATE admin_sessions SET is_current = 1, logged_in_at = NOW(), ip_address = ? WHERE id = ?",
-        [ip_address, existing[0].id]
-      );
-    } else {
-      await db.promise().query(
-        "INSERT INTO admin_sessions (device_info, browser, ip_address, is_current) VALUES (?, ?, ?, 1)",
-        [device_info, browser, ip_address]
-      );
-    }
-    res.json({ success: true, message: "Device registered" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to register device" });
-  }
-});
-app.delete("/api/settings/devices/others", async (req, res) => {
-  try {
-    await ensureSettingsTables();
-    await db.promise().query("DELETE FROM admin_sessions WHERE is_current = 0");
-    res.json({ success: true, message: "Signed out all other devices" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to sign out devices" });
-  }
-});
+
 app.listen(PORT, () => {
   console.log(`Server Running On Port ${PORT}`);
 });
