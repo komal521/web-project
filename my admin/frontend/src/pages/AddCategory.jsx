@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dashboardIcon from "../assets/dashboard (1).png";
 import chartIcon from "../assets/bar-chart.png";
 import infoIcon from "../assets/information.png";
@@ -9,6 +9,12 @@ import closeIcon from "../assets/close.png";
 import fileIcon from "../assets/file.png";
 import axios from "axios";
 const AddCategory = ({ darkMode }) => {
+  const [brands, setBrands] = useState([]);
+  const [newBrand, setNewBrand] = useState({ name: "", description: "" });
+  const [totalActive, setTotalActive] = useState(42);
+  const [colors, setColors] = useState([]);
+  const [newColor, setNewColor] = useState({ name: "", hex: "#6f4e37" });
+
   const [featured, setFeatured] = useState(false);
   const [sitemap, setSitemap] = useState(true);
   const [globalSearch, setGlobalSearch] = useState(true);
@@ -23,6 +29,82 @@ const AddCategory = ({ darkMode }) => {
   breadcrumb: "",
 });
 const [image, setImage] = useState(null);
+
+const fetchBrands = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/brands");
+    if (res.data.success) setBrands(res.data.brands);
+  } catch (err) {
+    console.error(err);
+  }
+};
+const fetchTotalActive = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/categories");
+    if (res.data.success) setTotalActive(res.data.categories.length);
+  } catch (err) {
+    console.error(err);
+  }
+};
+const fetchColors = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/colors");
+    if (res.data.success) setColors(res.data.colors);
+  } catch (err) {
+    console.error(err);
+  }
+};
+const handleAddColor = async () => {
+  if (!newColor.name) return;
+  try {
+    await axios.post("http://localhost:5000/api/colors", {
+      colorName: newColor.name,
+      hexCode: newColor.hex
+    });
+    setNewColor({ name: "", hex: "#6f4e37" });
+    fetchColors();
+    alert("Color added");
+  } catch (err) {
+    alert("Failed to add color");
+  }
+};
+const handleDeleteColor = async (id) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/colors/${id}`);
+    fetchColors();
+  } catch (err) {
+    alert("Failed to delete color");
+  }
+};
+useEffect(() => {
+  fetchBrands();
+  fetchTotalActive();
+  fetchColors();
+}, []);
+
+const handleAddBrand = async () => {
+  if (!newBrand.name) return;
+  try {
+    await axios.post("http://localhost:5000/api/brands", {
+      brandName: newBrand.name,
+      description: newBrand.description
+    });
+    setNewBrand({ name: "", description: "" });
+    fetchBrands();
+    alert("Brand added");
+  } catch (err) {
+    alert("Failed to add brand");
+  }
+};
+const handleDeleteBrand = async (id) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/brands/${id}`);
+    fetchBrands();
+  } catch (err) {
+    alert("Failed to delete brand");
+  }
+};
+
 const handleChange = (e) => {
   setFormData({
     ...formData,
@@ -79,7 +161,7 @@ const handleSubmit = async () => {
                   Total Active
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-[#1b1b1b]">
-                  42
+                  {totalActive}
                 </h2>
               </div>
             </div>
@@ -154,9 +236,7 @@ const handleSubmit = async () => {
             className="w-full resize-none rounded-3xl border border-gray-200 bg-[#fafafa] p-5 text-sm outline-none"/>
             </div>
             
-          </div>
-          <div className="space-y-6">
-            <div className="rounded-[28px] bg-white p-5 shadow-sm sm:p-6">
+            <div className="mt-8 rounded-[28px] bg-white p-5 shadow-sm sm:p-6 border border-gray-100">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-[#1b1b1b]">
                   Visual Media
@@ -165,7 +245,7 @@ const handleSubmit = async () => {
                   Mandatory
                 </span>
               </div>
-              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[30px] border-2 border-dashed border-gray-200 bg-[#fcfcfc] p-6 text-center">
+              <div className="flex min-h-[300px] flex-col items-center justify-center rounded-[30px] border-2 border-dashed border-gray-200 bg-[#fcfcfc] p-6 text-center">
                 <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#f7f1e4]">
                   <img src={imageIcon} alt="" className="h-10 w-10" />
                 </div>
@@ -181,6 +261,55 @@ const handleSubmit = async () => {
                 <input type="file" onChange={(e) => setImage(e.target.files[0])} className="mt-4"/>
               </div>
             </div>
+          </div>
+          <div className="space-y-6">
+
+            <div className="rounded-[28px] bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-lg font-bold text-[#1b1b1b] mb-4">Manage Brands</h2>
+              <div className="mb-4">
+                <input type="text" placeholder="Brand Name" value={newBrand.name} onChange={(e) => setNewBrand({...newBrand, name: e.target.value})} className="w-full mb-2 rounded-xl border border-gray-200 bg-[#fafafa] p-3 text-sm outline-none" />
+                <textarea rows={2} placeholder="Description (Optional)" value={newBrand.description} onChange={(e) => setNewBrand({...newBrand, description: e.target.value})} className="w-full mb-2 resize-none rounded-xl border border-gray-200 bg-[#fafafa] p-3 text-sm outline-none" />
+                <button onClick={handleAddBrand} className="w-full rounded-xl bg-[#6f4e37] text-white py-2 text-sm font-semibold hover:bg-[#5c4033] transition">Add Brand</button>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {brands.map(b => (
+                  <div key={b.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{b.brand_name}</p>
+                      <p className="text-xs text-gray-500 truncate w-32 sm:w-48">{b.description || "No description"}</p>
+                    </div>
+                    <button onClick={() => handleDeleteBrand(b.id)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Delete</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-lg font-bold text-[#1b1b1b] mb-4">Colour Palette</h2>
+              <div className="mb-4">
+                <input type="text" placeholder="Color Name" value={newColor.name} onChange={(e) => setNewColor({...newColor, name: e.target.value})} className="w-full mb-2 rounded-xl border border-gray-200 bg-[#fafafa] p-3 text-sm outline-none" />
+                <div className="flex items-center gap-3 mb-2">
+                  <input type="color" value={newColor.hex} onChange={(e) => setNewColor({...newColor, hex: e.target.value})} className="w-12 h-10 rounded-lg border border-gray-200 cursor-pointer" />
+                  <span className="text-sm text-gray-500 font-mono">{newColor.hex}</span>
+                </div>
+                <button onClick={handleAddColor} className="w-full rounded-xl bg-[#6f4e37] text-white py-2 text-sm font-semibold hover:bg-[#5c4033] transition">Add Color</button>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {colors.map(c => (
+                  <div key={c.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full border-2 border-white shadow-md" style={{ backgroundColor: c.hex_code || "#ccc" }}></div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{c.color_name}</p>
+                        <p className="text-xs text-gray-500 font-mono">{c.hex_code || "N/A"}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDeleteColor(c.id)} className="text-red-500 hover:text-red-700 text-xs font-bold uppercase">Delete</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="rounded-[28px] bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-lg font-bold text-[#1b1b1b]">
                 Classification

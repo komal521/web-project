@@ -40,6 +40,34 @@ const Reports = ({ darkMode }) => {
   const [stats, setStats] = useState(defaultStats);
   const [revenueData, setRevenueData] = useState(Array(12).fill(0));
   const [recentReports, setRecentReports] = useState([]);
+  const [viewItem, setViewItem] = useState(null);
+  const [editItem, setEditItem] = useState(null);
+
+  const handleDelete = async (item) => {
+    if (!window.confirm(`Delete "${item.client}"? This cannot be undone.`)) return;
+    const isProduct = item.id.includes("PRD");
+    const numericId = item.id.replace(/[^0-9]/g, "");
+    const endpoint = isProduct
+      ? `http://localhost:5000/api/products/${numericId}`
+      : `http://localhost:5000/api/categories/${numericId}`;
+    try {
+      const res = await fetch(endpoint, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setRecentReports(prev => prev.filter(r => r.id !== item.id));
+        alert(`"${item.client}" deleted successfully.`);
+      } else {
+        alert("Delete failed: " + (data.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to server.");
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditItem(item);
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -148,6 +176,7 @@ const Reports = ({ darkMode }) => {
   ];
 
   return (
+    <>
     <div
       className={`p-3 sm:p-4 md:p-6 lg:p-8 min-h-screen transition-all duration-300
       ${darkMode ? "bg-[#0f0f0f]" : "bg-[#f5f7fb]"}`}>
@@ -375,18 +404,14 @@ const Reports = ({ darkMode }) => {
     <div className="mt-6 overflow-x-auto">
       <div className="min-w-[700px]">
         {/* HEAD */}
-        <div
-          className={`grid grid-cols-[1fr_1.5fr_1fr_1fr_1fr] text-sm font-medium pb-4 border-b
-          ${
-            darkMode
-              ? "border-[#2a2a2a] text-gray-400"
-              : "border-[#ececec] text-gray-500"
-          }`} >
-          <span>ID</span>
+        <div className={`grid grid-cols-[1fr_1.5fr_1fr_1fr_1fr] py-4 text-xs font-semibold uppercase tracking-wider
+          ${darkMode ? "border-[#222] text-gray-500" : "border-[#f1f1f1] text-gray-400"}`}>
+          <span>Report ID</span>
           <span>Client Name</span>
           <span>Revenue</span>
           <span>Status</span>
-          <span className="text-right">Date</span>
+         <span>Date</span> 
+          
         </div>
         {recentReports.length > 0 ? (
           recentReports.map((item, index) => (
@@ -398,8 +423,9 @@ const Reports = ({ darkMode }) => {
                   ? "border-[#222] text-gray-300"
                   : "border-[#f1f1f1] text-gray-700"
               }`} >
+     
               <span className="text-[#d9a63d] font-medium">{item.id}</span>
-              <span>{item.client}</span>
+              <span className="font-semibold">{item.client}</span>
               <span className="font-medium">{item.revenue}</span>
               <div>
                 <span
@@ -407,7 +433,8 @@ const Reports = ({ darkMode }) => {
                   {item.status}
                 </span>
               </div>
-              <span className="text-right">{item.date}</span>
+             <span>{item.date}</span> 
+            
             </div>
           ))
         ) : (
@@ -473,6 +500,96 @@ const Reports = ({ darkMode }) => {
     </div>
    </div>
     </div>
+    {viewItem && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setViewItem(null)}>
+        <div
+          className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 transition-all duration-300 ${
+            darkMode ? "bg-[#1a1a1a] text-white border border-[#333]" : "bg-white text-gray-800"
+          }`}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={() => setViewItem(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 hover:text-red-500 transition text-lg font-bold">✕</button>
+          <h3 className="text-xl font-bold mb-6 text-[#6f4e37]">Report Details</h3>
+          <div className="space-y-4">
+            {[
+              { label: "ID", value: viewItem.id },
+              { label: "Name", value: viewItem.client },
+              { label: "Revenue", value: viewItem.revenue },
+              { label: "Status", value: viewItem.status },
+              { label: "Date", value: viewItem.date },
+            ].map(row => (
+              <div key={row.label} className={`flex justify-between items-center py-3 border-b ${ darkMode ? "border-[#2a2a2a]" : "border-gray-100"}`}>
+                <span className="text-sm font-medium text-gray-400">{row.label}</span>
+                <span className="text-sm font-semibold">{row.value}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => { handleEdit(viewItem); setViewItem(null); }} className="mt-6 w-full py-3 rounded-2xl bg-[#6f4e37] text-white font-semibold text-sm hover:bg-[#5a3d2b] transition">Edit This Item</button>
+        </div>
+      </div>
+    )}
+    {editItem && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setEditItem(null)}>
+        <div
+          className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-lg mx-4 ${
+            darkMode ? "bg-[#1a1a1a] text-white border border-[#333]" : "bg-white text-gray-800"
+          }`}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={() => setEditItem(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 hover:text-red-500 transition text-lg font-bold">✕</button>
+          <h3 className="text-xl font-bold mb-6 text-[#6f4e37]">Edit — {editItem.client}</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase text-gray-400 mb-1 block">Name</label>
+              <input
+                defaultValue={editItem.client}
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${ darkMode ? "bg-[#252525] border-[#333] text-white" : "bg-gray-50 border-gray-200"}`}
+                onChange={e => setEditItem(prev => ({...prev, client: e.target.value}))}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-gray-400 mb-1 block">Status</label>
+              <select
+                defaultValue={editItem.status}
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${ darkMode ? "bg-[#252525] border-[#333] text-white" : "bg-gray-50 border-gray-200"}`}
+                onChange={e => setEditItem(prev => ({...prev, status: e.target.value}))}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={async () => {
+                const isProduct = editItem.id.includes("PRD");
+                const numericId = editItem.id.replace(/[^0-9]/g, "");
+                const endpoint = isProduct
+                  ? `http://localhost:5000/api/products/${numericId}`
+                  : `http://localhost:5000/api/categories/${numericId}`;
+                try {
+                  const body = isProduct
+                    ? { product_name: editItem.client, is_active: editItem.status === "Active" ? 1 : 0 }
+                    : { category_name: editItem.client, status: editItem.status };
+                  const res = await fetch(endpoint, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setRecentReports(prev => prev.map(r => r.id === editItem.id ? { ...r, client: editItem.client, status: editItem.status } : r));
+                    alert("Updated successfully!");
+                    setEditItem(null);
+                  } else { alert("Update failed: " + (data.message || "Unknown")); }
+                } catch (err) { console.error(err); alert("Server error."); }
+              }}
+              className="flex-1 py-3 rounded-2xl bg-[#6f4e37] text-white font-semibold text-sm hover:bg-[#5a3d2b] transition"
+            >Save Changes</button>
+            <button onClick={() => setEditItem(null)} className={`flex-1 py-3 rounded-2xl font-semibold text-sm border transition ${ darkMode ? "border-[#333] text-gray-300 hover:bg-[#252525]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

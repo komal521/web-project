@@ -21,9 +21,12 @@ const ensureCategoriesTable = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);};
+const path = require("path");
+const UPLOADS_DIR = path.join(__dirname, "../../../backend/uploads");
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, UPLOADS_DIR);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);

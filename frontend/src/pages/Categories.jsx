@@ -22,14 +22,19 @@ import laptopIcon from "../assets/laptop.png";
 import rightArrow from "../assets/right-arrow (1).png";
 const Categories =() =>{
   const [categories,setCategories] = useState([]);
+  const [brandsList, setBrandsList] = useState([]);
   const [products, setProducts] = useState([]);
   const [activePage, setActivePage] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [maxPriceFilter, setMaxPriceFilter] = useState(200000);
   const [wishlistedIds, setWishlistedIds] = useState({});
+  const [colorsList, setColorsList] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
   useEffect(() => {
     fetchCategories();
+    fetchBrands();
+    fetchColors();
   }, []);
   useEffect(() => {
     fetchProducts();
@@ -60,7 +65,29 @@ const Categories =() =>{
           : data.categories || []
       );
     } catch (error) {
-      console.log(error);
+      console.log("Error fetching categories", error);
+    }
+  };
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/brands");
+      const data = await response.json();
+      if (data.success) {
+        setBrandsList(data.brands.map(b => b.brand_name));
+      }
+    } catch (error) {
+      console.log("Error fetching brands", error);
+    }
+  };
+  const fetchColors = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/colors");
+      const data = await response.json();
+      if (data.success) {
+        setColorsList(data.colors || []);
+      }
+    } catch (error) {
+      console.log("Error fetching colors", error);
     }
   };
   const fetchProducts = async () => {
@@ -134,12 +161,7 @@ const Categories =() =>{
       })); }
     window.dispatchEvent(
       new Event("wishlistUpdated") );};
-  const brandsList = [
-    "Aura Private Label",
-    "Vincenzo & Co.",
-    "Lumina Paris",
-    "Ethereal Swiss",
-    "Marquis London" ];
+
   return(
     <>
     <Navbar/>
@@ -222,10 +244,28 @@ const Categories =() =>{
                                   </label> ))}
                               </div>
                             </div>
-                            <div className="border-b dark:border-gray-700 pb-4  mb-6">
-                              <div className="flex items-center justify-between" >
-                                <h4 className="text-sm  font-medium dark:text-white"> Colour Palette</h4>
+                            <div className="border-b dark:border-gray-700 pb-4 mb-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-medium dark:text-white"> Colour Palette</h4>
                                 <img  src={downArrow} alt="" className=" w-3 h-3 dark:invert"/>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {colorsList.map((color) => (
+                                  <button key={color.id}
+                                    onClick={() => {
+                                      setSelectedColors((prev) =>
+                                        prev.includes(color.color_name) ? prev.filter(c => c !== color.color_name) : [...prev, color.color_name]
+                                      );
+                                    }}
+                                    className={`w-8 h-8 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
+                                      selectedColors.includes(color.color_name)
+                                        ? "border-[#6f4e37] ring-2 ring-[#6f4e37] ring-offset-1"
+                                        : "border-gray-200"
+                                    }`}
+                                    style={{ backgroundColor: color.hex_code || "#ccc" }}
+                                    title={color.color_name}
+                                  />
+                                ))}
                               </div>
                             </div>
                             <div  className=" bg-[#6f4e37] border border-black rounded-2xl p-4">

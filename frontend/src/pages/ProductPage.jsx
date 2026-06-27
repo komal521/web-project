@@ -336,7 +336,7 @@ const ProductPage = () => {
           title: p.product_name,
           price: `₹${p.base_price}`,
           oldPrice: p.discount_price > 0 ? `₹${p.discount_price}` : "",
-          rating: "4.9"
+          rating: p.rating
         }));
         if (mappedFeatured.length < 4) {
           const filler = timelessProducts.slice(0, 4 - mappedFeatured.length);
@@ -526,7 +526,7 @@ const ProductPage = () => {
      title={item.product_name}
      price={`₹${item.base_price}`}
      oldPrice={`₹${item.discount_price}`}
-     rating="4.8"
+     rating={item.rating}
      variants={item.variants}
      showButton={true}  />))}
           </div>

@@ -12,6 +12,21 @@ import profileImg from "../assets/profile.jpg";
 import downArrow from "../assets/down-arrow.png";
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      fetch(`http://localhost:5000/api/products?searchQuery=${searchQuery}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.products) setSearchResults(data.products.slice(0, 5));
+        })
+        .catch(err => console.error(err));
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [user, setUser] = useState(null);
   const [darkMode, setDarkMode] = useState(() => {
@@ -52,11 +67,8 @@ const Navbar = () => {
            <Link to="/home" className="md:hidden flex items-center gap-2">
   <img src={logo} alt="Logo" className="w-400 h-[60px] object-contain"  />
             </Link>
-<div className="hidden md:flex items-center mr-4">
-  <Link to="/home" className="flex items-center">
-    <img src={logo} alt="Logo" className="w-400 h-[70px] object-contain" />
-  </Link>
-</div></div>
+<Link to="/home" className="hidden md:flex items-center mr-4">
+  <img  src={logo}  alt="Logo"  className="w-400 h-[70px] object-contain"/></Link>
             <nav className="hidden md:flex items-center gap-7">
               <Link to="/home" className={navLink("/home")}>Home</Link>
               <div className="relative group cursor-pointer py-2">
@@ -79,10 +91,29 @@ const Navbar = () => {
               </div>
             </nav>
           </div>
-          <div className={`hidden lg:flex items-center rounded-full px-5 py-3 w-[420px] transition-colors duration-300 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
-            <img src={searchIcon} alt="" className={`w-5 h-5 opacity-60 ${darkMode ? "invert" : ""}`} />
-            <input type="text" placeholder="Search products..."
-              className={`bg-transparent outline-none ml-3 w-full text-sm ${darkMode ? "text-white placeholder-gray-400" : "text-black"}`}/>
+          <div className="relative hidden lg:block z-50">
+            <div className={`flex items-center rounded-full px-5 py-3 w-[420px] transition-colors duration-300 ${darkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+              <img src={searchIcon} alt="" className={`w-5 h-5 opacity-60 ${darkMode ? "invert" : ""}`} />
+              <input type="text" placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSearchDropdown(true)}
+                onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+                className={`bg-transparent outline-none ml-3 w-full text-sm ${darkMode ? "text-white placeholder-gray-400" : "text-black"}`}/>
+            </div>
+            {showSearchDropdown && searchResults.length > 0 && (
+              <div className={`absolute top-full mt-2 w-full rounded-xl shadow-xl overflow-hidden z-50 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border`}>
+                {searchResults.map((product) => (
+                  <Link key={product.id} to={`/products`} className={`flex items-center gap-3 p-3 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-colors`}>
+                    <img src={`http://localhost:5000/uploads/${product.image}`} alt="" className="w-10 h-10 object-cover rounded" />
+                    <div>
+                      <h4 className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{product.product_name}</h4>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>₹{product.base_price}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center mr-2">
