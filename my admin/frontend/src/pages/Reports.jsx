@@ -550,8 +550,7 @@ const Reports = ({ darkMode }) => {
               <select
                 defaultValue={editItem.status}
                 className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${ darkMode ? "bg-[#252525] border-[#333] text-white" : "bg-gray-50 border-gray-200"}`}
-                onChange={e => setEditItem(prev => ({...prev, status: e.target.value}))}
-              >
+                onChange={e => setEditItem(prev => ({...prev, status: e.target.value}))}>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
