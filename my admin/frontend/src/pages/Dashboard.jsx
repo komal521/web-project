@@ -35,6 +35,7 @@ const Dashboard = ({ darkMode, setActive, setEditData }) => {
   const [editForm, setEditForm] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [revenueData, setRevenueData] = useState(Array(12).fill(0));
+  const [salesPerformance, setSalesPerformance] = useState({ direct: 40, social: 30, referral: 20, email: 10 });
   useEffect(() => {
     const loadDashboardCards = async () => {
       try {
@@ -64,9 +65,21 @@ const Dashboard = ({ darkMode, setActive, setEditData }) => {
         console.error("Error loading revenue graph:", error);
       }
     };
+    const loadSalesPerformance = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/sales-performance");
+        const data = await response.json();
+        if (data.success) {
+          setSalesPerformance(data.data);
+        }
+      } catch (error) {
+        console.error("Error loading sales performance:", error);
+      }
+    };
     loadDashboardCards();
     loadProducts();
     loadRevenueGraph();
+    loadSalesPerformance();
   }, []);
 
   const loadProducts = async () => {
@@ -249,6 +262,11 @@ const Dashboard = ({ darkMode, setActive, setEditData }) => {
     }
   };
   const maxVal = Math.max(...revenueData, 10000);
+  const totalSales = salesPerformance.direct + salesPerformance.social + salesPerformance.referral + salesPerformance.email || 100;
+  const pctDirect = Math.round((salesPerformance.direct / totalSales) * 100);
+  const pctSocial = Math.round((salesPerformance.social / totalSales) * 100);
+  const pctReferral = Math.round((salesPerformance.referral / totalSales) * 100);
+  const pctEmail = 100 - pctDirect - pctSocial - pctReferral;
   const points = revenueData.map((val, idx) => {
     const x = Math.round((idx / 11) * 700);
     const y = Math.round(270 - (val / maxVal) * 220); // 30px padding
@@ -481,38 +499,32 @@ const Dashboard = ({ darkMode, setActive, setEditData }) => {
                   stroke="#e5e7eb"
                   strokeWidth="3" />
                 <path
-                  d="
-            M18 2.5
-            a 15.5 15.5 0 1 1 0 31
-            a 15.5 15.5 0 1 1 0 -31
-            "
+                  d="M18 2.5 a 15.5 15.5 0 1 1 0 31 a 15.5 15.5 0 1 1 0 -31"
                   fill="none"
                   stroke="#c89a33"
                   strokeWidth="3"
-                  strokeDasharray="45 100" />
+                  strokeDasharray={`${pctDirect} 100`} />
                 <path
-                  d="
-            M18 2.5
-            a 15.5 15.5 0 1 1 0 31
-            a 15.5 15.5 0 1 1 0 -31
-            "
+                  d="M18 2.5 a 15.5 15.5 0 1 1 0 31 a 15.5 15.5 0 1 1 0 -31"
                   fill="none"
                   stroke="#1f1f1f"
                   strokeWidth="3"
-                  strokeDasharray="25 100"
-                  strokeDashoffset="-48" />
+                  strokeDasharray={`${pctSocial} 100`}
+                  strokeDashoffset={-pctDirect} />
                 <path
-                  d="
-            M18 2.5
-            a 15.5 15.5 0 1 1 0 31
-            a 15.5 15.5 0 1 1 0 -31
-            "
+                  d="M18 2.5 a 15.5 15.5 0 1 1 0 31 a 15.5 15.5 0 1 1 0 -31"
                   fill="none"
                   stroke="#d1d5db"
                   strokeWidth="3"
-                  strokeDasharray="15 100"
-                  strokeDashoffset="-75"
-                />
+                  strokeDasharray={`${pctReferral} 100`}
+                  strokeDashoffset={-(pctDirect + pctSocial)} />
+                <path
+                  d="M18 2.5 a 15.5 15.5 0 1 1 0 31 a 15.5 15.5 0 1 1 0 -31"
+                  fill="none"
+                  stroke="#8b8b8b"
+                  strokeWidth="3"
+                  strokeDasharray={`${pctEmail} 100`}
+                  strokeDashoffset={-(pctDirect + pctSocial + pctReferral)} />
               </svg>
               <div   className=" absolute inset-6 sm:inset-7 bg-[#f7f7f7] rounded-full " ></div>
             </div>
@@ -523,28 +535,28 @@ const Dashboard = ({ darkMode, setActive, setEditData }) => {
                 <div className="w-2.5 h-2.5 rounded-full bg-[#c89a33]"></div>
                 <span className="text-yellow-900">Direct</span>
               </div>
-              <span className="font-semibold text-yellow-900">400%</span>
+              <span className="font-semibold text-yellow-900">{pctDirect}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
                 <span className="text-yellow-900">Social</span>
               </div>
-              <span className="font-semibold text-yellow-900">300%</span>
+              <span className="font-semibold text-yellow-900">{pctSocial}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#d1d5db]"></div>
                 <span className="text-yellow-900">Referral</span>
               </div>
-              <span className="font-semibold text-yellow-900">200%</span>
+              <span className="font-semibold text-yellow-900">{pctReferral}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#8b8b8b]"></div>
                 <span className="text-yellow-900">Email</span>
               </div>
-              <span className="font-semibold text-yellow-900">100%</span>
+              <span className="font-semibold text-yellow-900">{pctEmail}%</span>
             </div>
           </div>
         </div>

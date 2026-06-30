@@ -38,9 +38,9 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [savedAddress, setSavedAddress] = useState({ name: "", line1: "", city: "", pincode: "", phone: "" });
+  const [savedAddress, setSavedAddress] = useState({ name: "", email: "", line1: "", city: "", pincode: "", phone: "" });
   const [addressSaved, setAddressSaved] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState("cod");
   const [upiId, setUpiId] = useState("");
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -53,6 +53,50 @@ const Profile = () => {
       profileImage: storedUser.profileImage || "",
       username: storedUser.username || "",
     });
+    
+    let parsedAddress = {
+      name: storedUser.fullName || "",
+      email: storedUser.email || "",
+      line1: "",
+      city: "",
+      pincode: "",
+      phone: storedUser.phone || ""
+    };
+    if (storedUser.address) {
+      const parts = storedUser.address.split(",");
+      if (parts.length >= 4) {
+        const namePart = parts[0].trim();
+        const emailPart = parts[1] && parts[1].includes("@") ? parts[1].trim() : (storedUser.email || "");
+        const offset = parts[1] && parts[1].includes("@") ? 1 : 0;
+        const linePart = parts[1 + offset] ? parts[1 + offset].trim() : "";
+        const cityPinPart = parts[2 + offset] ? parts[2 + offset].trim() : "";
+        const phonePart = parts[3 + offset] ? parts[3 + offset].trim() : "";
+        
+        let city = cityPinPart;
+        let pincode = "";
+        if (cityPinPart.includes("-")) {
+          const cp = cityPinPart.split("-");
+          city = cp[0].trim();
+          pincode = cp[1].trim();
+        }
+        
+        let phoneVal = phonePart;
+        if (phonePart.toLowerCase().startsWith("ph:")) {
+          phoneVal = phonePart.substring(3).trim();
+        }
+        
+        parsedAddress = {
+          name: namePart || storedUser.fullName || "",
+          email: emailPart || storedUser.email || "",
+          line1: linePart,
+          city: city,
+          pincode: pincode,
+          phone: phoneVal || storedUser.phone || ""
+        };
+      }
+    }
+    setSavedAddress(parsedAddress);
+
     const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
     setCartCount(cartItems.length);
     if (storedUser.id) {
@@ -163,7 +207,7 @@ const Profile = () => {
   };
   const handleSaveAddress = async () => {
     if (!userData.id) { alert("Please login to save address"); return; }
-    const fullAddress = `${savedAddress.name}, ${savedAddress.line1}, ${savedAddress.city} - ${savedAddress.pincode}, Ph: ${savedAddress.phone}`;
+    const fullAddress = `${savedAddress.name}, ${savedAddress.email}, ${savedAddress.line1}, ${savedAddress.city} - ${savedAddress.pincode}, Ph: ${savedAddress.phone}`;
     try {
       const res = await fetch(`http://localhost:5000/api/users/profile/${userData.id}`, {
         method: "PUT",
@@ -494,6 +538,12 @@ const Profile = () => {
                       </div>
                     </div>
                     <div>
+                      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Email Address</label>
+                      <input type="email" placeholder="Enter email address" value={savedAddress.email}
+                        onChange={(e) => setSavedAddress({...savedAddress, email: e.target.value})}
+                        className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-400 dark:focus:border-amber-500 transition bg-white dark:bg-gray-900 text-gray-800 dark:text-white" />
+                    </div>
+                    <div>
                       <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Address Line</label>
                       <input type="text" placeholder="Street, Apartment, Area" value={savedAddress.line1}
                         onChange={(e) => setSavedAddress({...savedAddress, line1: e.target.value})}
@@ -527,44 +577,21 @@ const Profile = () => {
                     <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Choose your preferred payment option</p>
                   </div>
                   <div className="p-6 space-y-4">
-                    <div className={`border-2 rounded-2xl p-4 cursor-pointer transition ${selectedPayment === "upi" ? "border-[#6f4e37] bg-amber-50 dark:bg-amber-955/20" : "border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-500"}`}
-                      onClick={() => setSelectedPayment("upi")}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">📱</span></div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 dark:text-white">UPI Payment</h4>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Google Pay, PhonePe, Paytm</p>
-                        </div>
-                        <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPayment === "upi" ? "border-[#6f4e37]" : "border-gray-300 dark:border-gray-600"}`}>
-                          {selectedPayment === "upi" && <div className="w-2.5 h-2.5 rounded-full bg-[#6f4e37]" />}
-                        </div>
-                      </div>
-                      {selectedPayment === "upi" && (
-                        <div className="mt-4">
-                          <input type="text" placeholder="Enter UPI ID (e.g. name@paytm)" value={upiId}
-                            onChange={(e) => setUpiId(e.target.value)}
-                            className="w-full border border-amber-300 dark:border-amber-900 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6f4e37] transition bg-white dark:bg-gray-900 dark:text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className={`border-2 rounded-2xl p-4 cursor-pointer transition ${selectedPayment === "cod" ? "border-[#6f4e37] bg-amber-50 dark:bg-amber-955/20" : "border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-500"}`}
-                      onClick={() => setSelectedPayment("cod")}>
+                    <div className="border-2 rounded-2xl p-4 cursor-pointer transition border-[#6f4e37] bg-amber-50 dark:bg-amber-955/20">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">💵</span></div>
                         <div>
                           <h4 className="font-semibold text-gray-800 dark:text-white">Cash on Delivery</h4>
                           <p className="text-xs text-gray-500 dark:text-gray-400">Pay cash when order arrives</p>
                         </div>
-                        <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPayment === "cod" ? "border-[#6f4e37]" : "border-gray-300 dark:border-gray-600"}`}>
-                          {selectedPayment === "cod" && <div className="w-2.5 h-2.5 rounded-full bg-[#6f4e37]" />}
+                        <div className="ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center border-[#6f4e37]">
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#6f4e37]" />
                         </div>
                       </div>
                     </div>
-                    {selectedPayment && (
-                      <button className="w-full bg-[linear-gradient(135deg,#f3d3b5,#b78457,#6f4e37)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-md">
-                         Confirm {selectedPayment === "upi" ? "UPI" : "Cash on Delivery"}
-                      </button>
-                    )}
+                    <button className="w-full bg-[linear-gradient(135deg,#f3d3b5,#b78457,#6f4e37)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-md">
+                       Confirm Cash on Delivery
+                    </button>
                   </div>
                 </div>
               )}

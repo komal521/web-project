@@ -14,6 +14,12 @@ import binIcon from "../assets/bin (1).png";
 import showIcon from "../assets/show.png";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import a1 from "../assets/a1.jpeg";
+import a4 from "../assets/a4.jpeg";
+import b1 from "../assets/b1.jpeg";
+import b2 from "../assets/b2.jpeg";
+import b4 from "../assets/b4.jpeg";
+const profileImages = [a1, a4, b1, b2, b4];
 const Enquiries = ({ darkMode, setActive, setEditData }) => {
   const defaultCards = [
     { title: "TOTAL ENQUIRIES", value: "00", growth: "+12.5%", icon: boxIcon, bg: "from-[#C8A25A] to-[#8B6A45]", iconBg: "bg-[#1b1b1b]", growthColor: "text-[#1d1d1d]" },
@@ -329,8 +335,11 @@ const Enquiries = ({ darkMode, setActive, setEditData }) => {
                             title="View"  >
                             <img src={showIcon} alt="View" className="w-4 h-4 opacity-80" />
                           </button>
-                          <button  onClick={() => {
-                              setEditData(item.raw);
+                           <button  onClick={() => {
+                              setEditData({
+                                ...item.raw,
+                                displayedImage: profileImages[index % profileImages.length]
+                              });
                               setActive("Edit Enquiry");
                             }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-50 hover:bg-amber-100 transition-all"

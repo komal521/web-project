@@ -286,7 +286,10 @@ const Categories = ({ darkMode, setActive, setEditData }) => {
                     </button>
                     <button
                       onClick={() => {
-                        setEditData(item);
+                        setEditData({
+                          ...item,
+                          displayedImage: item.image ? `http://localhost:5000/uploads/${item.image}` : "https://via.placeholder.com/120"
+                        });
                         setActive("Edit Category");
                       }}
                       className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-amber-100 text-amber-600 transition-all"

@@ -491,7 +491,13 @@ app.get("/api/revenue-graph", async (req, res) => {
 app.get("/api/shipping/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;
-    const [results] = await db.query("SELECT * FROM shipping_details WHERE order_id = ?", [orderId]);
+    const [results] = await db.query(
+      `SELECT s.*, o.customer_name, o.email, o.phone, o.address, o.items, o.total_amount, o.created_at AS order_date
+       FROM shipping_details s
+       JOIN orders o ON s.order_id = o.id
+       WHERE s.order_id = ?`,
+      [orderId]
+    );
     if (results && results.length > 0) {
       res.json({ success: true, shipping: results[0] });
     } else {

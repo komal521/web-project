@@ -448,7 +448,17 @@ const handleDelete = async (id) => {
                           <button className="hover:scale-110 transition-all" onClick={() => setViewProduct(product)}>
                             <img src={showIcon} alt="" className="w-4 h-4 opacity-70" />
                           </button>
-                          <button className="hover:scale-110 transition-all" onClick={() => { if (product.raw) { setEditData(product.raw); setActive("Edit Product"); } else alert('Static products cannot be edited'); }}>
+                           <button className="hover:scale-110 transition-all" onClick={() => {
+                             if (product.raw) {
+                               setEditData({
+                                 ...product.raw,
+                                 displayedImage: product.image
+                               });
+                               setActive("Edit Product");
+                             } else {
+                               alert('Static products cannot be edited');
+                             }
+                           }}>
                             <img src={pencilIcon} alt="" className="w-4 h-4 opacity-70" />
                           </button>
                           <button className="hover:scale-110 transition-all" onClick={() => {

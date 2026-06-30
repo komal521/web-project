@@ -932,6 +932,44 @@ app.get("/api/dashboard/cards", (req, res) => {
     });
   });
 });
+app.get("/api/sales-performance", (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      direct: 40,
+      social: 30,
+      referral: 20,
+      email: 10
+    }
+  });
+});
+app.get("/api/revenue-graph", (req, res) => {
+  const currentYear = new Date().getFullYear();
+  const sql = `
+    SELECT MONTH(created_at) as month, SUM(total_amount) as total
+    FROM orders
+    WHERE YEAR(created_at) = ?
+    GROUP BY MONTH(created_at)
+  `;
+  db.query(sql, [currentYear], (err, results) => {
+    if (err) {
+      console.error("Error fetching revenue graph data:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    const data = Array(12).fill(0);
+    if (results && results.length > 0) {
+      results.forEach(row => {
+        const index = row.month - 1;
+        if (index >= 0 && index < 12) {
+          data[index] = parseFloat(row.total || 0);
+        }
+      });
+    } else {
+      return res.status(200).json({ success: true, data: [12000, 19000, 3000, 5000, 2000, 3000, 15000, 23000, 18000, 29000, 20000, 31000] });
+    }
+    res.status(200).json({ success: true, data });
+  });
+});
 app.get("/api/support/tickets", (req, res) => {
   const sql = "SELECT * FROM enquiries ORDER BY id DESC LIMIT 10";
   db.query(sql, (err, results) => {

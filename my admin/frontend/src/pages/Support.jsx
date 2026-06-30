@@ -236,9 +236,12 @@ const Support = ({ darkMode, setActive, setEditData }) => {
                               title="View">
                               <img src={showIcon} alt="View" className="w-4 h-4 object-contain" />
                             </button>
-                            <button
+                             <button
                               onClick={() => {
-                                setEditData(ticket);
+                                setEditData({
+                                  ...ticket,
+                                  displayedImage: profileImages[index % profileImages.length]
+                                });
                                 setActive("Edit Support");
                               }}
                               className="p-1.5 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors"

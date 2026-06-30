@@ -28,7 +28,7 @@ const EditSupport = ({ darkMode, editData, setActive }) => {
         priority: editData.priority || "Medium",
         status: editData.status || "Pending",
         created_at: editData.created_at || "",
-        image: editData.image || null
+        image: editData.displayedImage || editData.image || null
       });
     }
   }, [editData]);

@@ -40,7 +40,9 @@ const EditCategory = ({ darkMode, editData, setActive }) => {
         stats: editData.stats || "",
         created_at: editData.created_at || ""
       });
-      if (editData.image) {
+      if (editData.displayedImage) {
+        setImagePreview(editData.displayedImage);
+      } else if (editData.image) {
         setImagePreview(`http://localhost:5000/uploads/${editData.image}`);
       }
     }

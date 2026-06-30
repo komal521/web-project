@@ -106,18 +106,48 @@ const OrderManagement = ({ darkMode, setActive, setEditData }) => {
   const fetchOrders = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/orders");
-      const mappedOrders = (res.data.orders || []).map((o, idx) => ({
-        raw: o,
-        id: `#ORD-${o.id}`,
-        customer: o.customer_name,
-        image: profileImages[idx % profileImages.length],
-        product: o.items || "Products",
-        date: new Date(o.created_at).toLocaleDateString(),
-        payment: "UPI/Card",
-        status: o.status || "Pending",
-        amount: `₹${Number(o.total_amount).toLocaleString("en-IN")}`,
-        statusColor: getStatusColor(o.status),
-      }));
+      const mappedOrders = (res.data.orders || []).map((o, idx) => {
+        let itemsData = [];
+        let productNames = "Products";
+        let productImage = profileImages[idx % profileImages.length];
+
+        if (o.items) {
+          if (o.items.trim().startsWith("[")) {
+            try {
+              itemsData = JSON.parse(o.items);
+              if (Array.isArray(itemsData) && itemsData.length > 0) {
+                productNames = itemsData.map(i => `${i.title} (Qty: ${i.qty || 1})`).join(", ");
+                const firstItemImg = itemsData[0].image || itemsData[0].img;
+                if (firstItemImg) {
+                  if (firstItemImg.startsWith("http") || firstItemImg.startsWith("data:") || firstItemImg.startsWith("/src") || firstItemImg.startsWith("/static")) {
+                    productImage = firstItemImg;
+                  } else {
+                    productImage = `http://localhost:5000/uploads/${firstItemImg}`;
+                  }
+                }
+              }
+            } catch (err) {
+              console.log("Error parsing items JSON:", err);
+              productNames = o.items;
+            }
+          } else {
+            productNames = o.items;
+          }
+        }
+
+        return {
+          raw: o,
+          id: `#ORD-${o.id}`,
+          customer: o.customer_name,
+          image: productImage,
+          product: productNames,
+          date: new Date(o.created_at).toLocaleDateString(),
+          payment: "UPI/Card",
+          status: o.status || "Pending",
+          amount: `₹${Number(o.total_amount).toLocaleString("en-IN")}`,
+          statusColor: getStatusColor(o.status),
+        };
+      });
       setOrders(mappedOrders);
     } catch (error) {
       console.log("Error fetching orders:", error);
@@ -311,7 +341,7 @@ const OrderManagement = ({ darkMode, setActive, setEditData }) => {
       (o.product || "").toString().toLowerCase().includes(q);
     return matchesSearch;
   });
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
   const paginatedOrders = filteredOrders.slice((activePage - 1) * itemsPerPage, activePage * itemsPerPage);
 
@@ -452,7 +482,10 @@ const OrderManagement = ({ darkMode, setActive, setEditData }) => {
                             <img src={showIcon} alt="View" className="w-4 h-4 opacity-80" />
                           </button>
                           <button onClick={() => {
-                              setEditData(item.raw);
+                              setEditData({
+                                ...item.raw,
+                                displayedImage: item.image
+                              });
                               setActive("Edit Order");  }}
                             className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-50 hover:bg-amber-100 transition-all"
                             title="Edit"  >
@@ -587,7 +620,18 @@ const OrderManagement = ({ darkMode, setActive, setEditData }) => {
               <p><strong>Email:</strong> {viewOrder.email}</p>
               <p><strong>Phone:</strong> {viewOrder.phone || "N/A"}</p>
               <p><strong>Address:</strong> {viewOrder.address || "N/A"}</p>
-              <p><strong>Product(s):</strong> {viewOrder.items || "N/A"}</p>
+              <p><strong>Product(s):</strong> {(() => {
+                const items = viewOrder.items || "";
+                if (items.trim().startsWith("[")) {
+                  try {
+                    const parsed = JSON.parse(items);
+                    return parsed.map(i => `${i.title} (Qty: ${i.qty || 1})`).join(", ");
+                  } catch (e) {
+                    return items;
+                  }
+                }
+                return items;
+              })() || "N/A"}</p>
               <p><strong>Total Amount:</strong> ₹{Number(viewOrder.total_amount).toLocaleString("en-IN")}</p>
               <p>
                 <strong>Status:</strong>{" "}

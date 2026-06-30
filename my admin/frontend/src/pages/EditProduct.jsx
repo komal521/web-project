@@ -52,7 +52,9 @@ const EditProduct = ({ darkMode, editData, setActive }) => {
         variants: editData.variants ? (typeof editData.variants === "string" ? JSON.parse(editData.variants) : editData.variants) : [],
         tags: editData.tags ? (typeof editData.tags === "string" ? JSON.parse(editData.tags) : editData.tags) : []
       });
-      if (editData.images) {
+      if (editData.displayedImage) {
+        setImagePreview(editData.displayedImage);
+      } else if (editData.images) {
         let imgs = editData.images;
         if (typeof imgs === "string") {
           try { imgs = JSON.parse(imgs); } catch { imgs = []; }

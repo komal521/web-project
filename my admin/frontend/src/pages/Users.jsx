@@ -222,7 +222,13 @@ const Users = ({ darkMode, setActive, setEditData }) => {
                       className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-blue-100 transition-all" title="View">
                       <img src={viewIcon} alt="View" className="w-4 h-4" />
                     </button>
-                  <button onClick={() => { setEditData(user); setActive("Edit User"); }}
+                   <button onClick={() => {
+                        setEditData({
+                          ...user,
+                          displayedImage: user.profileImage ? `http://localhost:5000/uploads/${user.profileImage}` : profileImages[index % profileImages.length]
+                        });
+                        setActive("Edit User");
+                      }}
                       className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-amber-100 transition-all" title="Edit">
                       <img src={pencilIcon} alt="Edit" className="w-4 h-4" />
                     </button>
@@ -273,7 +279,16 @@ const Users = ({ darkMode, setActive, setEditData }) => {
               ))}
             </div>
             <div className="mt-6 flex gap-3">
-              <button onClick={() => { setEditData(viewUser); setViewUser(null); setActive("Edit User"); }}
+              <button onClick={() => {
+                  const idx = users.findIndex(u => u.id === viewUser.id);
+                  const displayedImg = viewUser.profileImage ? `http://localhost:5000/uploads/${viewUser.profileImage}` : profileImages[idx !== -1 ? idx % profileImages.length : 0];
+                  setEditData({
+                    ...viewUser,
+                    displayedImage: displayedImg
+                  });
+                  setViewUser(null);
+                  setActive("Edit User");
+                }}
                 className="flex-1 bg-[#6f4e37] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#5a3d2b] transition flex items-center justify-center gap-2">
                 <img src={pencilIcon} alt="" className="w-4 h-4 brightness-0 invert" />
                 Edit User

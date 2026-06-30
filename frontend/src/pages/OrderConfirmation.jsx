@@ -33,19 +33,35 @@ const OrderConfirmation = () => {
           if (savedItems) {
             setItems(JSON.parse(savedItems));
           } else {
-            const parsedItems = (data.shipping.items || "")
-              .split(",")
-              .filter((x) => x.trim() !== "")
-              .map((title) => {
-                const cleanTitle = title.replace(/\(Qty: \d+\)/g, "").trim();
-                const qtyMatch = title.match(/\(Qty: (\d+)\)/);
-                const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-                return {
-                  title: cleanTitle,
-                  tag: `Qty: ${qty}`,
-                  price: `₹${Number(data.shipping.total_amount || 0).toFixed(2)}`
-                };
-              });
+            let parsedItems = [];
+            const rawItems = data.shipping.items || "";
+            if (rawItems.trim().startsWith("[")) {
+              try {
+                parsedItems = JSON.parse(rawItems).map(item => ({
+                  title: item.title,
+                  tag: `Qty: ${item.qty || 1}`,
+                  price: typeof item.price === "number" ? `₹${item.price.toFixed(2)}` : item.price,
+                  image: item.image || item.img
+                }));
+              } catch (e) {
+                console.error("Error parsing shipping items JSON:", e);
+              }
+            }
+            if (parsedItems.length === 0) {
+              parsedItems = rawItems
+                .split(",")
+                .filter((x) => x.trim() !== "")
+                .map((title) => {
+                  const cleanTitle = title.replace(/\(Qty: \d+\)/g, "").trim();
+                  const qtyMatch = title.match(/\(Qty: (\d+)\)/);
+                  const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+                  return {
+                    title: cleanTitle,
+                    tag: `Qty: ${qty}`,
+                    price: `₹${Number(data.shipping.total_amount || 0).toFixed(2)}`
+                  };
+                });
+            }
             setItems(parsedItems);
           }
         } else {

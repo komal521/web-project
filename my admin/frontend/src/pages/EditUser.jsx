@@ -34,8 +34,10 @@ const EditUser = ({ darkMode, editData, setActive }) => {
         status: editData.status || "Active",
         address: editData.address || ""
       });
-      if (editData.profileImage) {
-        setImagePreview(`http://localhost:5000/uploads/${editData.profileImage}`);
+      if (editData.displayedImage) {
+        setImagePreview(editData.displayedImage);
+      } else if (editData.profileImage || editData.profile_image) {
+        setImagePreview(`http://localhost:5000/uploads/${editData.profileImage || editData.profile_image}`);
       }
     }
   }, [editData]);

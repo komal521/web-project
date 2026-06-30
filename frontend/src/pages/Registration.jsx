@@ -75,8 +75,8 @@ const navigate = useNavigate();
             <label className="text-sm font-medium dark:text-gray-200">
               Username </label>
             <div className="flex items-center border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-full px-4 h-12 mt-2">
-              <img src={handleIcon} alt="" className="w-4 h-4 dark:invert" />
-              <input type="text" name="username" placeholder="UserName" onChange={handleChange}
+              <img src={userIcon} alt="" className="w-4 h-4 dark:invert" />
+              <input type="text" name="username" placeholder="e.g. john_doe" onChange={handleChange}
                  className="w-full ml-3 outline-none text-sm bg-transparent dark:text-white"/>
             </div>
           </div>

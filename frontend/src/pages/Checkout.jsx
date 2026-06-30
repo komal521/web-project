@@ -54,7 +54,12 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const itemNames = cartItems.map((item) => `${item.title} (Qty: 1)`).join(", ");
+    const serializedItems = JSON.stringify(cartItems.map((item) => ({
+      title: item.title,
+      image: item.img || item.image || "",
+      price: item.price,
+      qty: item.quantity || 1
+    })));
     try {
       const response = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
@@ -63,7 +68,7 @@ const Checkout = () => {
           ...formData,
           total_amount: grandTotal,
           estimated_tax: tax,
-          items: itemNames,
+          items: serializedItems,
           shipping_method: "Standard Delivery"
         })
       });

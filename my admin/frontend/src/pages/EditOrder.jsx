@@ -14,6 +14,7 @@ const EditOrder = ({ darkMode, editData, setActive }) => {
     status: "Pending"
   });
   const [saving, setSaving] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
   useEffect(() => {
     if (editData) {
       setOrder({
@@ -26,6 +27,9 @@ const EditOrder = ({ darkMode, editData, setActive }) => {
         total_amount: editData.total_amount || "",
         status: editData.status || "Pending"
       });
+      if (editData.displayedImage) {
+        setImagePreview(editData.displayedImage);
+      }
     }
   }, [editData]);
   const handleSubmit = async (e) => {
@@ -152,6 +156,37 @@ const EditOrder = ({ darkMode, editData, setActive }) => {
               </div>
             </div>
           </div>
+          
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-gray-405 uppercase mb-2">Current Image</label>
+              {imagePreview && (
+                <div className="mb-3">
+                  <img
+                    src={imagePreview}
+                    alt="Current image"
+                    className="w-32 h-32 rounded-xl object-cover border border-gray-200"
+                  />
+                  <p className="text-xs text-gray-450 mt-1">Current image</p>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-405 uppercase mb-2">Change Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) setImagePreview(URL.createObjectURL(file));
+                }}
+                className={`w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:ring-2 focus:ring-[#6f4e37] bg-transparent file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold ${
+                  darkMode ? "border-gray-700 text-white file:bg-gray-700 file:text-white" : "border-gray-200 text-gray-800 file:bg-gray-100 file:text-gray-700"
+                }`}
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-4 pt-4">
             <button type="button"
               onClick={() => setActive("Order Management")}
